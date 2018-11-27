@@ -549,7 +549,14 @@ starta:
         dateTypeF = False
         dateTypeG = False
 
-        offset = offset + dib.Length + vib.Length + dataLength
+        Dim aggiungi As Integer
+        If TypeOf (dataValue) Is Byte() Then
+            aggiungi = dataValue.length
+        Else
+            aggiungi = 1
+        End If
+
+        offset = offset + dib.Length + vib.Length + aggiungi
 
         GoTo starta
 
