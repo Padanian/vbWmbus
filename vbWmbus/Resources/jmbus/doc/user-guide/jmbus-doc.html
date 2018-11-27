@@ -1,0 +1,1058 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<!--[if IE]><meta http-equiv="X-UA-Compatible" content="IE=edge"><![endif]-->
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 1.5.5">
+<title>jMBus User Guide</title>
+<style>
+/*
+ * AsciiDoc 'volnitsky' theme for xhtml11 and html5 backends.
+ * Based on css from http://volnitsky.com, which was in turn based on default
+ * theme from AsciiDoc
+ *
+ * FIXME: The styling is still a bit rough in places.
+ *
+ */
+
+/* Default font. */
+body {
+  font-family: Helvetica, sans-serif;
+  max-width:62.5em;
+  margin: auto;
+}
+
+/* Title font. */
+
+h1, h2, h3, h4, h5, h6 {
+    clear: both;
+    font-family: Helvetica, serif;
+    line-height: 1.3;
+}
+
+a {
+    border-bottom: 1px dotted #999999;
+    color: #378f03 !important;
+    text-decoration: none !important;
+}
+a:hover {
+    border-bottom: 1px solid #378f03;
+    color: #378f03 !important;
+    text-decoration: none !important;
+}
+
+em {
+  font-style: italic;
+  color: #4E4E4E;
+}
+
+strong {
+  font-weight: bold;
+  color: #000000;
+}
+
+
+div.sectionbody {
+/*  margin-left: 0;*/
+}
+
+hr {
+  border: 1px solid #575757;
+}
+
+
+pre {
+  padding: 0;
+  margin: 0;
+}
+
+#author {
+  color: #575757;
+  font-weight: bold;
+  font-size: 1.1em;
+}
+
+#footer {
+  font-size: small;
+  padding-top: 0.5em;
+  margin-top: 4.0em;
+}
+
+#footer-text {
+  float: left;
+  padding-bottom: 0.5em;
+}
+
+#footer-badges {
+  float: right;
+  padding-bottom: 0.5em;
+}
+
+#preamble {
+  margin-top: 1.5em;
+  margin-bottom: 1.5em;
+}
+
+div.tableblock, div.imageblock, div.exampleblock, div.verseblock,
+div.quoteblock, div.literalblock, div.listingblock, div.sidebarblock,
+div.admonitionblock {
+  margin-top: 1.5em;
+  margin-bottom: 1.5em;
+}
+
+div.admonitionblock {
+  margin-top: 2.5em;
+  margin-bottom: 2.5em;
+}
+
+div.content { /* Block element content. */
+  padding: 0;
+}
+
+/* Block element titles. */
+div.title, caption.title {
+  color: #575757;
+  font-weight: bold;
+  text-align: left;
+  margin-top: 1.0em;
+  margin-bottom: 0.5em;
+}
+div.title + * {
+  margin-top: 0;
+}
+
+td div.title:first-child {
+  margin-top: 0.0em;
+}
+div.content div.title:first-child {
+  margin-top: 0.0em;
+}
+div.content + div.title {
+  margin-top: 0.0em;
+}
+
+div.sidebarblock > div.content {
+  background: #ffffee;
+  border: 1px solid silver;
+  padding: 0.5em;
+}
+
+div.listingblock > div.content {
+  border: 1px solid silver;
+  background: #f4f4f4;
+  padding: 0.5em;
+}
+
+div.quoteblock {
+  padding-left: 2.0em;
+  margin-right: 10%;
+}
+div.quoteblock > div.attribution {
+  padding-top: 0.5em;
+  text-align: right;
+}
+
+div.verseblock {
+  padding-left: 2.0em;
+  margin-right: 10%;
+}
+div.verseblock > pre.content {
+  font-family: inherit;
+}
+div.verseblock > div.attribution {
+  padding-top: 0.75em;
+  text-align: left;
+}
+/* DEPRECATED: Pre version 8.2.7 verse style literal block. */
+div.verseblock + div.attribution {
+  text-align: left;
+}
+
+div.admonitionblock .icon {
+  vertical-align: top;
+  font-size: 1.1em;
+  font-weight: bold;
+  text-decoration: underline;
+  color: #575757;
+  padding-right: 0.5em;
+}
+div.admonitionblock td.content {
+  padding-left: 0.5em;
+  border-left: 2px solid silver;
+}
+
+div.exampleblock > div.content {
+  border-left: 2px solid silver;
+  padding: 0.5em;
+}
+
+div.imageblock div.content { padding-left: 0; }
+span.image img { border-style: none; }
+a.image:visited { color: white; }
+
+dl {
+  margin-top: 0.8em;
+  margin-bottom: 0.8em;
+}
+dt {
+  margin-top: 0.5em;
+  margin-bottom: 0;
+  font-style: normal;
+  color: #575757;
+}
+dd > *:first-child {
+  margin-top: 0.1em;
+}
+
+ul, ol {
+    list-style-position: outside;
+}
+ol.arabic {
+  list-style-type: decimal;
+}
+ol.loweralpha {
+  list-style-type: lower-alpha;
+}
+ol.upperalpha {
+  list-style-type: upper-alpha;
+}
+ol.lowerroman {
+  list-style-type: lower-roman;
+}
+ol.upperroman {
+  list-style-type: upper-roman;
+}
+
+div.compact ul, div.compact ol,
+div.compact p, div.compact p,
+div.compact div, div.compact div {
+  margin-top: 0.1em;
+  margin-bottom: 0.1em;
+}
+
+div.tableblock > table {
+  border: 3px solid #575757;
+}
+thead {
+  font-weight: bold;
+  color: #575757;
+}
+tfoot {
+  font-weight: bold;
+}
+td > div.verse {
+  white-space: pre;
+}
+p.table {
+  margin-top: 0;
+}
+/* Because the table frame attribute is overriden by CSS in most browsers. */
+div.tableblock > table[frame="void"] {
+  border-style: none;
+}
+div.tableblock > table[frame="hsides"] {
+  border-left-style: none;
+  border-right-style: none;
+}
+div.tableblock > table[frame="vsides"] {
+  border-top-style: none;
+  border-bottom-style: none;
+}
+
+
+div.hdlist {
+  margin-top: 0.8em;
+  margin-bottom: 0.8em;
+}
+div.hdlist tr {
+  padding-bottom: 15px;
+}
+dt.hdlist1.strong, td.hdlist1.strong {
+  font-weight: bold;
+}
+td.hdlist1 {
+  vertical-align: top;
+  font-style: normal;
+  padding-right: 0.8em;
+  color: #575757;
+}
+td.hdlist2 {
+  vertical-align: top;
+}
+div.hdlist.compact tr {
+  margin: 0;
+  padding-bottom: 0;
+}
+
+.comment {
+  background: yellow;
+}
+
+@media print {
+  #footer-badges { display: none; }
+}
+
+#toctitle {
+  color: #575757;
+  font-size: 1.2em;
+  font-weight: bold;
+  margin-top: 1.0em;
+  margin-bottom: 0.1em;
+}
+
+div.toclevel1, div.toclevel2, div.toclevel3, div.toclevel4 { margin-top: 0; margin-bottom: 0; }
+div.toclevel1 { margin-top: 0.3em; margin-left: 0; font-size: 1.0em; }
+div.toclevel2 { margin-top: 0.25em; margin-left: 2em; font-size: 0.9em; }
+div.toclevel3 { margin-left: 4em; font-size: 0.8em; }
+div.toclevel4 { margin-left: 6em; font-size: 0.8em; }
+
+
+
+.monospaced, tt, div.listingblock > div.content {
+  font-family:  Consolas, "Andale Mono", "Courier New", monospace;
+  color: #004400;
+  background: #f4f4f4;
+  max-width: 80em;
+  line-height: 1.2em;
+}
+
+.paragraph p  {
+  line-height: 1.5em;
+  margin-top: 1em;
+}
+
+/*.paragraph p, li, dd, .content { max-width: 85em; }
+.admonitionblock               { max-width: 35em; }*/
+
+div.sectionbody div.ulist > ul > li {
+  list-style-type: square;
+  color: #aaa;
+}
+  div.sectionbody div.ulist >  ul > li > * {
+    color: black;
+    /*font-size: 50%;*/
+  }
+
+
+div.sectionbody div.ulist > ul > li div.ulist > ul > li {
+  color: #ccd ;
+}
+  div.sectionbody div.ulist > ul > li div.ulist > ul > li > * {
+    color: black ;
+  }
+
+/*
+ * html5 specific
+ *
+ * */
+
+table.tableblock {
+  margin-top: 1.0em;
+  margin-bottom: 1.5em;
+}
+thead, p.tableblock.header {
+  font-weight: bold;
+  color: #575757;
+}
+p.tableblock {
+  margin-top: 0;
+}
+table.tableblock {
+  border-width: 3px;
+  border-spacing: 0px;
+  border-style: solid;
+  border-color: #575757;
+  border-collapse: collapse;
+}
+th.tableblock, td.tableblock {
+  border-width: 1px;
+  padding: 4px;
+  border-style: solid;
+  border-color: #575757;
+}
+
+table.tableblock.frame-topbot {
+  border-left-style: hidden;
+  border-right-style: hidden;
+}
+table.tableblock.frame-sides {
+  border-top-style: hidden;
+  border-bottom-style: hidden;
+}
+table.tableblock.frame-none {
+  border-style: hidden;
+}
+
+th.tableblock.halign-left, td.tableblock.halign-left {
+  text-align: left;
+}
+th.tableblock.halign-center, td.tableblock.halign-center {
+  text-align: center;
+}
+th.tableblock.halign-right, td.tableblock.halign-right {
+  text-align: right;
+}
+
+th.tableblock.valign-top, td.tableblock.valign-top {
+  vertical-align: top;
+}
+th.tableblock.valign-middle, td.tableblock.valign-middle {
+  vertical-align: middle;
+}
+th.tableblock.valign-bottom, td.tableblock.valign-bottom {
+  vertical-align: bottom;
+}
+
+
+
+</style>
+<style>
+/* Stylesheet for CodeRay to match GitHub theme | MIT License | http://foundation.zurb.com */
+/*pre.CodeRay {background-color:#f7f7f8;}*/
+.CodeRay .line-numbers{border-right:1px solid #d8d8d8;padding:0 0.5em 0 .25em}
+.CodeRay span.line-numbers{display:inline-block;margin-right:.5em;color:rgba(0,0,0,.3)}
+.CodeRay .line-numbers strong{color:rgba(0,0,0,.4)}
+table.CodeRay{border-collapse:separate;border-spacing:0;margin-bottom:0;border:0;background:none}
+table.CodeRay td{vertical-align: top;line-height:1.45}
+table.CodeRay td.line-numbers{text-align:right}
+table.CodeRay td.line-numbers>pre{padding:0;color:rgba(0,0,0,.3)}
+table.CodeRay td.code{padding:0 0 0 .5em}
+table.CodeRay td.code>pre{padding:0}
+.CodeRay .debug{color:#fff !important;background:#000080 !important}
+.CodeRay .annotation{color:#007}
+.CodeRay .attribute-name{color:#000080}
+.CodeRay .attribute-value{color:#700}
+.CodeRay .binary{color:#509}
+.CodeRay .comment{color:#998;font-style:italic}
+.CodeRay .char{color:#04d}
+.CodeRay .char .content{color:#04d}
+.CodeRay .char .delimiter{color:#039}
+.CodeRay .class{color:#458;font-weight:bold}
+.CodeRay .complex{color:#a08}
+.CodeRay .constant,.CodeRay .predefined-constant{color:#008080}
+.CodeRay .color{color:#099}
+.CodeRay .class-variable{color:#369}
+.CodeRay .decorator{color:#b0b}
+.CodeRay .definition{color:#099}
+.CodeRay .delimiter{color:#000}
+.CodeRay .doc{color:#970}
+.CodeRay .doctype{color:#34b}
+.CodeRay .doc-string{color:#d42}
+.CodeRay .escape{color:#666}
+.CodeRay .entity{color:#800}
+.CodeRay .error{color:#808}
+.CodeRay .exception{color:inherit}
+.CodeRay .filename{color:#099}
+.CodeRay .function{color:#900;font-weight:bold}
+.CodeRay .global-variable{color:#008080}
+.CodeRay .hex{color:#058}
+.CodeRay .integer,.CodeRay .float{color:#099}
+.CodeRay .include{color:#555}
+.CodeRay .inline{color:#000}
+.CodeRay .inline .inline{background:#ccc}
+.CodeRay .inline .inline .inline{background:#bbb}
+.CodeRay .inline .inline-delimiter{color:#d14}
+.CodeRay .inline-delimiter{color:#d14}
+.CodeRay .important{color:#555;font-weight:bold}
+.CodeRay .interpreted{color:#b2b}
+.CodeRay .instance-variable{color:#008080}
+.CodeRay .label{color:#970}
+.CodeRay .local-variable{color:#963}
+.CodeRay .octal{color:#40e}
+.CodeRay .predefined{color:#369}
+.CodeRay .preprocessor{color:#579}
+.CodeRay .pseudo-class{color:#555}
+.CodeRay .directive{font-weight:bold}
+.CodeRay .type{font-weight:bold}
+.CodeRay .predefined-type{color:inherit}
+.CodeRay .reserved,.CodeRay .keyword {color:#000;font-weight:bold}
+.CodeRay .key{color:#808}
+.CodeRay .key .delimiter{color:#606}
+.CodeRay .key .char{color:#80f}
+.CodeRay .value{color:#088}
+.CodeRay .regexp .delimiter{color:#808}
+.CodeRay .regexp .content{color:#808}
+.CodeRay .regexp .modifier{color:#808}
+.CodeRay .regexp .char{color:#d14}
+.CodeRay .regexp .function{color:#404;font-weight:bold}
+.CodeRay .string{color:#d20}
+.CodeRay .string .string .string{background:#ffd0d0}
+.CodeRay .string .content{color:#d14}
+.CodeRay .string .char{color:#d14}
+.CodeRay .string .delimiter{color:#d14}
+.CodeRay .shell{color:#d14}
+.CodeRay .shell .delimiter{color:#d14}
+.CodeRay .symbol{color:#990073}
+.CodeRay .symbol .content{color:#a60}
+.CodeRay .symbol .delimiter{color:#630}
+.CodeRay .tag{color:#008080}
+.CodeRay .tag-special{color:#d70}
+.CodeRay .variable{color:#036}
+.CodeRay .insert{background:#afa}
+.CodeRay .delete{background:#faa}
+.CodeRay .change{color:#aaf;background:#007}
+.CodeRay .head{color:#f8f;background:#505}
+.CodeRay .insert .insert{color:#080}
+.CodeRay .delete .delete{color:#800}
+.CodeRay .change .change{color:#66f}
+.CodeRay .head .head{color:#f4f}
+</style>
+</head>
+<body class="article toc2 toc-left">
+<div id="header">
+<h1>jMBus User Guide</h1>
+<div id="toc" class="toc2">
+<div id="toctitle">Table of Contents</div>
+<ul class="sectlevel1">
+<li><a href="#_intro">1. Intro</a></li>
+<li><a href="#_using_jmbus">2. Using jMBus</a>
+<ul class="sectlevel2">
+<li><a href="#_wired_m_bus">2.1. Wired M-Bus</a></li>
+<li><a href="#_wireless_m_bus">2.2. Wireless M-Bus</a></li>
+<li><a href="#_variable_data_structure">2.3. Variable Data Structure</a></li>
+<li><a href="#cli_app">2.4. Command Line Application</a></li>
+<li><a href="#_dependencies">2.5. Dependencies</a></li>
+</ul>
+</li>
+<li><a href="#_how_m_bus_works">3. How M-Bus Works</a>
+<ul class="sectlevel2">
+<li><a href="#_wired_m_bus_2">3.1. Wired M-Bus</a></li>
+<li><a href="#_wireless_m_bus_2">3.2. Wireless M-Bus</a></li>
+<li><a href="#_variable_data_structure_2">3.3. Variable Data Structure</a></li>
+</ul>
+</li>
+<li><a href="#_modifying_and_compiling_jmbus">4. Modifying and Compiling jMBus</a></li>
+<li><a href="#_authors">5. Authors</a></li>
+</ul>
+</div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_intro">1. Intro</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>jMBus is an implementation of the M-Bus wired and wireless
+protocols. You can use it to program individual M-Bus wired masters or
+wireless M-Bus receivers that read meters such as gas, water, heat, or
+electricity meters.</p>
+</div>
+<div class="paragraph">
+<p>For M-Bus wired communication the library communicates over a serial
+port or USB port with an M-Bus master/level-converter device. We have
+successfully tested the library with level-converters from Relay.</p>
+</div>
+<div class="paragraph">
+<p>Wireless M-Bus communication requires a serial transceiver hardware,
+usually connected via USB. Currently jMBus supports transceivers from
+Amber, IMST and Radiocrafts. The library was tested with the AMB8465-M
+and AMB8665-M from Amber, the IM871A-USB from IMST and the RC1180-MBUS
+rom Radiocrafts. The jMBus only supports passive listening for
+messages in modes S, T and C2 at the moment. Encryption modes 1 and 5 are supported.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="images/box.jpg" alt="mbus box wiring" width="400">
+</div>
+<div class="title">Figure 1. M-Bus master in a sample wiring.</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_using_jmbus">2. Using jMBus</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_wired_m_bus">2.1. Wired M-Bus</h3>
+<div class="paragraph">
+<p>The first thing to do in order to communicate with a M-Bus device is to establish
+a new connection.</p>
+</div>
+<div class="listingblock">
+<div class="title">Opening a new M-Bus connection.</div>
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="java">MBusSerialBuilder builder = MBusConnection.newSerialBuilder(<span class="string"><span class="delimiter">&quot;</span><span class="content">/dev/ttyS0</span><span class="delimiter">&quot;</span></span>).setBaudrate(<span class="integer">2400</span>);
+<span class="keyword">try</span> (MBusConnection mBusConnection = builder.build()) {
+    <span class="comment">// read/write</span>
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Once the connection has been successfully established it can be used to
+read data from meters by calling the read method. The following line reads a
+meter at primary address <code>1</code> by sending a <code>REQ_UD2</code> message and waiting
+for <code>RSP_UD</code> message response. The variable data structure of the
+response is returned by the read function.</p>
+</div>
+<div class="listingblock">
+<div class="title">Read from Device.</div>
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="java">            <span class="type">int</span> primaryAddress = <span class="integer">1</span>;
+            mBusConnection.read(primaryAddress);
+        }
+    }
+
+    <span class="directive">public</span> <span class="directive">static</span> <span class="type">void</span> write() <span class="directive">throws</span> <span class="exception">IOException</span> {
+        MBusSerialBuilder builder = MBusConnection.newSerialBuilder(<span class="string"><span class="delimiter">&quot;</span><span class="content">/dev/ttyS0</span><span class="delimiter">&quot;</span></span>).setBaudrate(<span class="integer">2400</span>);
+        <span class="keyword">try</span> (MBusConnection mBusConnection = builder.build()) {
+            <span class="type">int</span> primaryAddress = <span class="integer">5</span>;
+            <span class="type">byte</span><span class="type">[]</span> data = { <span class="hex">0x01</span>, <span class="hex">0x7a</span>, <span class="hex">0x09</span> };
+            mBusConnection.write(primaryAddress, data);
+        }
+    }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Next the variable data structure can be parsed as explained below.</p>
+</div>
+<div class="paragraph">
+<p>An active connection can also be used to write data to a meter. The following
+line writes <code>0x017a09</code>, by calling <code>SND_UD</code>, to a meter with primary address <code>5</code>.
+This write command will change the primary address from <code>5</code> to <code>9</code>.</p>
+</div>
+<div class="listingblock">
+<div class="title">Write to Device.</div>
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="java"><span class="type">int</span> primaryAddress = <span class="integer">5</span>;
+<span class="type">byte</span><span class="type">[]</span> data = { <span class="hex">0x01</span>, <span class="hex">0x7a</span>, <span class="hex">0x09</span> };
+mBusConnection.write(primaryAddress, data);</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Try the CLI APP described in <a href="#cli_app">Command Line Application</a>.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_wireless_m_bus">2.2. Wireless M-Bus</h3>
+<div class="paragraph">
+<p>First a wireless connection needs to be established.
+The following line creates a connection (receiver) for
+transceivers by Amber using mode <code>S</code>.</p>
+</div>
+<div class="paragraph">
+<p>You can then set keys that will be automatically used to decode
+received messages using encryption mode 5 (AES with CBC and IV).</p>
+</div>
+<div class="listingblock">
+<div class="title">Opening a new wreless M-Bus connection.</div>
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="java">WMBusManufacturer wmBusManufacturer = WMBusManufacturer.AMBER;
+WMBusListener listener = <span class="keyword">new</span> MyWMBusListener();
+<span class="predefined-type">String</span> serialPortName = <span class="string"><span class="delimiter">&quot;</span><span class="content">/dev/ttyUSB0</span><span class="delimiter">&quot;</span></span>;
+WMBusSerialBuilder builder = <span class="keyword">new</span> WMBusSerialBuilder(wmBusManufacturer, listener, serialPortName)
+        .setMode(WMBusMode.S);
+
+<span class="keyword">try</span> (WMBusConnection wmBusConnection = builder.build()) {
+    wmBusConnection.addKey(address, key);
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The listener passed to the wireless M-Bus builder has to implement the callback
+method <code>newMessage(WMBusMessage)</code>. This way the connection passes received
+messages to the application.</p>
+</div>
+<div class="paragraph">
+<p>Try the CLI APP described in <a href="#cli_app">Command Line Application</a>.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_variable_data_structure">2.3. Variable Data Structure</h3>
+<div class="paragraph">
+<p>Before accessing elements of a variable data structure it has to be
+decoded using the decode method.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="cli_app">2.4. Command Line Application</h3>
+<div class="paragraph">
+<p>The library is distributed with a demo CLI application. You can
+run the CLI APP using the script found in the folder <code>/run-scripts</code>.
+The file ending with <code>.sh</code> is a shell script for Unix/Linux/Mac. The file
+ending with <code>.bat.winfile</code> is a batch file for use with Windows.</p>
+</div>
+<div class="paragraph">
+<p>In order to run the script in Windows you have to rename the batch file by
+removing the ".winfile" ending so that it simply end with ".bat".</p>
+</div>
+<div class="paragraph">
+<p>The <strong>jmbusApp</strong> can be used to:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>read a specific device over wired M-Bus</p>
+</li>
+<li>
+<p>write data to a specific device over wired M-Bus</p>
+</li>
+<li>
+<p>scan for connected wired M-Bus devices</p>
+</li>
+<li>
+<p>listens for incoming wireless M-Bus messages and
+prints them to the screen</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Executing the script without any parameters will print help
+information to the screen.</p>
+</div>
+<div class="paragraph">
+<p>Instead of running the application from the terminal you can create
+Eclipse project files as explained here:
+<a href="https://www.openmuc.org/faq/" class="bare">https://www.openmuc.org/faq/</a> and run them from within Eclipse.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_dependencies">2.5. Dependencies</h3>
+<div class="paragraph">
+<p>jMBus depends on the Java library jRxTx. jRxTx is a fork of RxTx and
+is hosted at <a href="https://github.com/openmuc/jrxtx" class="bare">https://github.com/openmuc/jrxtx</a>. The library is licensed
+under the LGPL(v2.1 or later) + linking exception.</p>
+</div>
+<div class="paragraph">
+<p>Note that you have to install the native part of RxTx as
+explained in our
+<a href="https://www.openmuc.org/faq/how-do-i-get-serial-communication-to-work-with-rxtx/">FAQ</a>.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_how_m_bus_works">3. How M-Bus Works</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>This chapter gives a short introduction into the M-Bus
+protocol. Further information can be found in the standard documents
+(EN-13757 parts 1-4,IEC-870-5 parts 1-2) and on <a href="http://www.m-bus.com" class="bare">http://www.m-bus.com</a> .</p>
+</div>
+<div class="sect2">
+<h3 id="_wired_m_bus_2">3.1. Wired M-Bus</h3>
+<div class="paragraph">
+<p>Wired M-Bus has a bus topology where a single master can communicate
+with up to 250 slaves (even more when secondary addressing is used)
+via a twisted pair cable. The master communicates with a slave using
+voltage changes (36/24V) and a slave communicates with the master
+using current changes(1.0/1.5mA). The current can optionally be used
+by devices as a power supply. M-Bus devices are protected against
+polarity reversal and may use a baud rate between 300 Baud
+and 38400 Baud. Most meters use 2400 Baud.</p>
+</div>
+<div class="paragraph">
+<p>Wired M-Bus differentiates between five different frame types: single
+character (the byte 0xe5 is used for confirmation purposes), SND_NKE
+(send link reset), SND_UD (send user data), REQ_UD1 (request user
+data 1), REQ_UD2 (request user data 2) and RSP_UD (respond user
+data). The most common M-Bus message exchange is the request/response
+service where the master sends a REQ_UD2 frame addressed to a specific
+slave (usually a meter) and the slave answers with RSP_UD message
+containing all the current measurement values.</p>
+</div>
+<div class="paragraph">
+<p>The REQ_UD2 frame contains only the primary address (1 byte) of the
+slave that is to be read. A master cannot address certain data points
+it wants to read. Instead the slave always answers with a complete
+list of its data. A slave that successfully receives a REQ_UD2 message
+with a matching address replies with a RSP_UD frame. All other slaves
+that receive the request do not answer.</p>
+</div>
+<div class="paragraph">
+<p>The RSP_UD frame contains the address of the slave sending the frame,
+a control information (CI) field equal to 0x72, 0x78 or 0x7A and a
+variable data structure that is explained further down. The CI field
+may have other values if an application layer other than the M-Bus
+application layer is used (e.g. COSEM). The jMBus library only
+supports the M-Bus application layer.</p>
+</div>
+<div class="sect3">
+<h4 id="_primary_addressing">3.1.1. Primary Addressing</h4>
+<div class="paragraph">
+<p>The primary address is coded as a single byte allowing
+values between 0 and 255. Addresses 1 to 250 may be assigned to
+slaves. The other addresses have special purposes:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>255 is a broadcast address. A device that receives a message with
+address 255 never replies to it. Sending REQ_UD2 frames to the
+broadcast address makes therefore little sense.</p>
+</li>
+<li>
+<p>254 is also a broadcast address. This time all slaves shall answer
+requests which may lead to collisions and is only meant for testing
+purposes.</p>
+</li>
+<li>
+<p>251 and 252 are reserved and should not be used for now.</p>
+</li>
+<li>
+<p>0 is used by unconfigured slaves. They can later be assigned to
+other addresses using secondary addressing.</p>
+</li>
+<li>
+<p>253 indicates that secondary addressing is being used.</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_secondary_addressing">3.1.2. Secondary Addressing</h4>
+<div class="paragraph">
+<p>Unconfigured slaves usually have a primary address of 0 assigned. In
+this case the master can still address the slave using secondary
+addressing.</p>
+</div>
+<div class="paragraph">
+<p>Secondary addressing works using two message exchanges. First the
+master sends a SND_UD frame addressed to primary address 253. The
+SND_UD frame contains the secondary address of the target slave. The
+addressed slave replies with a confirmation (single character). This
+mechanism is called selecting a slave. Next the master can read the
+slave by sending a regular REQ_UD2 frame again to primary address
+253. Only the selected slave will answer the request.</p>
+</div>
+<div class="paragraph">
+<p>The secondary address is a world wide unique ID of the M-Bus
+device. It is 8 bytes long and consists of the following fields:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Identification Number</strong> (4 bytes) - A number ranging from 00000000
+to 99999999 to identify the meter.</p>
+</li>
+<li>
+<p><strong>Manufacturer ID</strong> (2 bytes) - Three letters that identify the
+manufacturer.</p>
+</li>
+<li>
+<p><strong>Version</strong> (1 byte) - Specifies the version of the device. The
+version is manufacturer specific.</p>
+</li>
+<li>
+<p><strong>Device type</strong> (1 byte) - This field codes the device type
+(e.g. electricity meter, cold water meter)</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_wireless_m_bus_2">3.2. Wireless M-Bus</h3>
+<div class="paragraph">
+<p>Wireless M-Bus communication uses frequencies between 868 MHz and 870
+MHz. Different physical layer modes are available. The two most common
+modes are S and T.</p>
+</div>
+<div class="paragraph">
+<p>In S mode a meter sends messages in regular intervals (e.g. every 15
+minutes or every 2hours). Messages sent have a long message header. If
+the meter is only sending messages and not listening for messages the
+meter is said to use the mode S1. If the meter is also listening for
+messages the mode is called S2. The S2 mode requires significantly more
+power. Therefore devices using S2 are usually not battery powered. A
+gateway that collects data from meters always uses the S2 mode.</p>
+</div>
+<div class="paragraph">
+<p>In mode T the meter sends data more frequently (usually every few
+seconds) with a shorter message header. Again the meter can only send
+data (T1) or also listen for data (T2). A meter in T2 mode only
+listens for incoming messages for a short time after having sent a
+message. A gateway in T2 mode will constantly listen for messages
+instead.</p>
+</div>
+<div class="paragraph">
+<p>Several wireless M-Bus frame types exist: SND-NKE, SND-NR, ACC-NR and
+more. The data frames that meters transmit in regular intervals are
+called SND-NR (send without request). SND-NR is the most common frame
+type and it is the only frame type that jMBus supports.</p>
+</div>
+<div class="paragraph">
+<p>The SND-NR frame contains the secondary address of the sender. This
+uniquely identifies the sender. Note that the sender may not
+necessarily be the meter that the data is originating from. The meters
+secondary address can be specified in the variable data structure as
+explained below. Keys used to encrypt and decrypt M-Bus messages are
+associated with a specific secondary address.</p>
+</div>
+<div class="paragraph">
+<p>Finally the SND-NR frame contains a CI field equal to 0x72, 0x78 or
+0x7A and a variable data structure that is explained further
+down. Often the variable data structure of wireless M-Bus frames only
+has a short data header instead of a long header (as in wired M-Bus)
+because the secondary address is already transmitted in the data link
+layer.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_variable_data_structure_2">3.3. Variable Data Structure</h3>
+<div class="paragraph">
+<p>The variable data structure is the part of an M-Bus frame that
+contains the measurement data. Its format is defined as part of the
+M-Bus application layer in EN 13757-3.</p>
+</div>
+<div class="paragraph">
+<p>A variable data structure consists of the following components:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p><strong>Data Header</strong> (optional) - Depending on the value of the CI field
+the variable data structure contains a long data header (CI=0x72),
+short data header (CI=0x7a), or no data header (CI=0x78). The header
+contains mainly information about the metering device. A short header
+contains the following fields:</p>
+<div class="openblock">
+<div class="content">
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Access number</strong> (1 byte) - is a counter of how many times a meter
+has been read (wired M-Bus) or a meter has sent data (wireless
+M-Bus). For detailed information on when the access number is
+incremented see EN 13757-3.</p>
+</li>
+<li>
+<p><strong>Status</strong> (1 byte) - Codes the status of the metering device. For
+example a device can signal that it is running out of power or is
+in an error state.</p>
+</li>
+<li>
+<p><strong>Configuration</strong> (2 bytes) - the configuration field contains
+information about the encryption mode and the number of encrypted
+bytes. Wired M-Bus usually uses no encryption while wireless M-Bus
+meters often do. Only data after the data header may be encrypted.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>A long data header contains the secondary address of the meter in
+addition to all the fields of the short header.</p>
+</div>
+</div>
+</div>
+</li>
+<li>
+<p><strong>Data records</strong> - Data records (sometimes called variable data
+blocks) contain the measured data. Each data record is made up of a
+data information block (DIB), a value information block (VIB) and a
+value.  Similar to OBIS codes DIBs and VIBs code information such
+as the meaning of a value.</p>
+<div class="openblock">
+<div class="content">
+<div class="paragraph">
+<p>The DIB codes:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Storage number</strong> - a meter can have several storages e.g. to store
+historical time series data. The storage number 0 signals an
+actual value.</p>
+</li>
+<li>
+<p><strong>Function</strong> - Data can have the following four function
+types: instantaneous value, max value, min value, value during
+error state</p>
+</li>
+<li>
+<p><strong>Data value type</strong> - The length and coding of the data value field
+following the DIB and VIB. Possible value types are
+8/16/24/32/48/64 bit integer, 32 bit real, 2/4/6/8/12 digit
+binary coded decimals (BCD), date and string. In addition the
+value type "none" exists to label data records that have no data
+value field.</p>
+</li>
+<li>
+<p><strong>Tariff</strong> - Indicates the tariff number of this data field. The data
+of tariff 0 is usually the sum of all other tariffs.</p>
+</li>
+<li>
+<p><strong>Subunit</strong> - Can be used by a slave to distinguish several subunits
+of the metering device.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>The VIB codes:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Description</strong> - The meaning of the data value (e.g. "Energy", "Volume" etc.)</p>
+</li>
+<li>
+<p><strong>Unit</strong> - The unit of the data value.</p>
+</li>
+<li>
+<p><strong>Multiplier</strong> - A factor by which the data value coded in the data
+field has to be multiplied with</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</li>
+<li>
+<p><strong>Manufacturer specific data</strong> (optional) - Manufacturer specific
+data may optionally be appended at the end of the frame. This is
+essentially an array of bytes that is not standardized by the M-Bus
+standard.</p>
+</li>
+</ol>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_modifying_and_compiling_jmbus">4. Modifying and Compiling jMBus</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>We use the Gradle build automation tool. The distribution contains a
+fully functional gradle build file ("build.gradle"). Thus if you
+changed code and want to rebuild a library you can do it easily with
+Gradle. Also if you want to import our software into Eclipse you can
+easily create Eclipse project files using Gradle. Just follow the
+instructions on our FAQ site: <a href="https://www.openmuc.org/faq/" class="bare">https://www.openmuc.org/faq/</a></p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_authors">5. Authors</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>Dirk Zimmermann</p>
+</li>
+<li>
+<p>Albrecht Schall</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Alumni:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Stefan Feuerhahn</p>
+</li>
+<li>
+<p>Michael Zillgith</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2018-11-12 10:49:18 MEZ
+</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,126 @@
+
+project.ext {
+
+  cfgVersion = "3.2.0"
+  
+  cfgGroup = "org.openmuc"
+
+  cfgCopyDependencies = true
+
+  cfgCopyToRoot = false
+
+  cfgSignPom = true
+
+  cfgRepository = project.properties.sonatypeRepository
+
+  cfgSnapshotRepository = project.properties.sonatypeSnapshotRepository
+
+  cfgRepositoryUser = project.properties.sonatypeUser
+
+  cfgRepositoryPass = project.properties.sonatypePass
+
+  javaProjects = allprojects
+
+  distributionProjects = allprojects.findAll {
+    it.getPath() == ":cli-app" ||
+    it.getPath() == ":"
+  }
+ 
+  repositoryProjects = allprojects.findAll {
+    it.getPath() == ":"
+  }
+  
+  docProjects = distributionProjects
+}
+
+tasks.withType(Tar) {
+
+  into(project.name) {
+    from("./") {
+      include "*.gradle"
+      include "license/**"
+      include "doc/**"
+      include "run-scripts/**"
+      include "gradle/**"
+      include "gradlew*"
+      include "build/libs-all/**"
+      include "dependencies/**"
+      include "src/**"
+      include "cli-app/**"
+    }
+
+    if (name.equals("tar") ){
+      exclude "**/dependencies/**/src"
+      exclude "**/bin/**"
+      exclude "**/.project"
+      exclude "**/.classpath"
+      exclude "**/.gradle/"
+      exclude "**/.settings/"
+    }
+
+  }
+
+  into(project.name + "/doc/user-guide/") {
+    from("./build/asciidoc/html5/") {
+      include "**"
+    }
+    from("./build/asciidoc/pdf/") {
+      include "*.pdf"
+    }
+  }
+
+  into(project.name + "/doc/") {
+    from("./build/docs/") {
+      include "javadoc/**"
+    }
+  }
+
+
+}
+
+
+//------------------project specific configurations--------------------
+
+apply plugin: "java"
+apply plugin: "eclipse"
+apply plugin: "osgi"
+apply plugin: "maven"
+apply plugin: "signing"
+
+repositories {
+  mavenLocal()
+}
+
+dependencies {
+  compile group: "org.openmuc", name: "jrxtx", version: "1.0.1"
+  
+  testCompile group: 'pl.pragmatists', name: 'JUnitParams', version: '1.1.0'
+}
+
+jar {
+  manifest {
+    name = "jMBus"
+    instruction "Export-Package", "!*.internal.*,*"
+  }
+}
+
+uploadArchives {
+  repositories {
+    mavenDeployer {
+      pom.project {
+        name "jMBus"
+        description "jMBus is a library that can be used to implement M-Bus masters or wireless M-Bus receivers that read meters."
+        
+        licenses {
+          license {
+            name 'Mozilla Public License v2.0'
+            url 'http://mozilla.org/MPL/2.0/'
+            distribution 'repo'
+          }
+        }
+        
+      }
+    }
+  }
+}
+

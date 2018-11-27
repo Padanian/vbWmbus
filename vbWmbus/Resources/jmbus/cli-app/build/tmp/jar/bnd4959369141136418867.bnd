@@ -1,0 +1,10 @@
+Import-Package=javax.xml.bind,org.openmuc.jmbus;version\="[3.2,4)",org.openmuc.jmbus.internal.cli;version\="[3.2,4)",org.openmuc.jmbus.transportlayer;version\="[3.2,4)",org.openmuc.jmbus.wireless;version\="[3.2,4)",org.openmuc.jrxtx;version\="[1.0,2)"
+Bundle-Name=cli-app
+Export-Package=org.openmuc.jmbus.app;version\="3.2.0";uses\:\="org.openmuc.jmbus.internal.cli,org.openmuc.jmbus.wireless",org.openmuc.jmbus.internal.cli;version\="3.2.0"
+Created-By=1.8.0_171 (Oracle Corporation)
+Bundle-Version=3.2.0
+Bundle-ManifestVersion=2
+Bnd-LastModified=1542042519000
+Require-Capability=osgi.ee;filter\:\="(&(osgi.ee\=JavaSE)(version\=1.7))"
+Tool=Bnd-3.4.0.201707252008
+Bundle-SymbolicName=org.openmuc.cli-app

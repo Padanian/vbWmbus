@@ -1,0 +1,11 @@
+-classpath '/home/dzimmerm/git/jmbus/cli-app/build/classes/java/main:/home/dzimmerm/git/jmbus/cli-app/build/resources/main:/home/dzimmerm/git/jmbus/build/libs/jmbus-3.2.0.jar:/home/dzimmerm/.gradle/caches/modules-2/files-2.1/org.openmuc/jrxtx/1.0.1/778bbe41c9c8b8fd0091f1e8977d645fc26a36c/jrxtx-1.0.1.jar'
+-d '/home/dzimmerm/git/jmbus/cli-app/build/docs/javadoc'
+-doctitle 'cli-app 3.2.0 API'
+-quiet 
+-windowtitle 'cli-app 3.2.0 API'
+'/home/dzimmerm/git/jmbus/cli-app/src/main/java/org/openmuc/jmbus/app/ConsoleLineParser.java'
+'/home/dzimmerm/git/jmbus/cli-app/src/main/java/org/openmuc/jmbus/app/CliPrinter.java'
+'/home/dzimmerm/git/jmbus/cli-app/src/main/java/org/openmuc/jmbus/app/ConsoleApp.java'
+'/home/dzimmerm/git/jmbus/cli-app/src/main/java/org/openmuc/jmbus/app/WMBusStart.java'
+'/home/dzimmerm/git/jmbus/cli-app/src/main/java/org/openmuc/jmbus/app/CliConnection.java'
+'/home/dzimmerm/git/jmbus/cli-app/src/main/java/org/openmuc/jmbus/app/VerboseMessageListenerImpl.java'

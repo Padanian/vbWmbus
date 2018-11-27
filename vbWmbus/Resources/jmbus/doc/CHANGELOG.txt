@@ -1,0 +1,184 @@
+v3.2.0 12-Nov-2018
+------------------
+ - added reading M-Bus messages with wrong length field
+ - added new IEC 62056-6-2 2017 DLMS units and fixed old one
+ - added verbose messages for wireless M-Bus in jmbus-app 
+ - added flush TCP input stream after opening
+ - thanks to Tomáš Procházka for:
+    - Amber device:
+        * fixed not working RSSI
+        * added UART_CMD_Out_Enable detection
+        * added CRC check if UART_CMD_Out_Enable
+    - fixed possible ArrayIndexOutOfBoundsException in decryptAesCbcIv()
+    - fixed windows start script
+
+v3.1.1 16-Jul-2018
+------------------
+- added connection timeout option for TCP connections, default is 10 s
+- only decode vdr if is not decoded
+
+v3.1.0 18-Apr-2018
+------------------
+- added wireless M-Bus TCP support
+- added Mode-C2 support, thanks to Ernst Rohlicek <e.rohlicek@kugu-home.com>
+- upgraded to v1.0.1 of jrxtx
+- fixed bug in newFromManufactureId(), thanks to Mr Struwe from kemper-olpe.de
+- fixed null pointer exception while scanning secondary address with cli-app
+
+v3.0.1 27-Oct-2017
+------------------
+- Wireless M-Bus Imst: read length tag as unsigned
+- fixed bug with encrypted short header messages
+
+v3.0.0 23-Oct-2017
+------------------
+- renamed MBusSap to MBusConnection
+- changed API for supporting more types of transport layer, 
+  only configuration has changed
+    * added connection builder
+    * added transport layer abstraction 
+- added M-Bus TCP support
+- added jmbus-app TCP support
+- thanks to Mr Pirscoveanu from Neogrid Technologies for adding:
+    * AES/CTR/NoPadding decryption
+    * Kamstrup decoding for long and short headers
+- fixed wrong parsing of negative INT48 numbers (thanks to Mr Minde
+  from ISC Konstanz)
+- added creation of initialization vector with long header
+- some system output improvements in jmbus app
+- fixed NegativeArraySizeException with IMST IM871A Sticks
+- moved wireless part to package org.openmuc.jmbus.wireless
+- moved cli application to subproject
+- SecondaryAddress rename instantiation methods
+- added methods for individual M-Bus messages 
+
+v2.3.0 18-Jul-2017
+------------------
+- changed license from GPL to MPL v2.0 (Mozilla Public License)
+- depends on jRxTx instead of RXTX library for serial
+  communication. jRxTx is compatible to the RXTX native libraries.
+- added IMST wireless M-Bus transceivers support. Tested with
+  IM871A-USB
+- refactored sample apps, one start script for all now
+- new version of CLI parser for sample apps
+- added verbose messages as listener
+- added automatic resynchronization when receiving wM-Bus data using
+  Amber stick, thanks to Felix Wagner
+- SecondaryAddress.java is comparable now
+- removed printouts in scan secondary address, added message listener
+- fixed smaller bugs and typos
+
+
+v2.2.2 04-Jul-2016
+------------------
+- added support for negative BCDs thanks to Mr Pirscoveanu from
+  Neogrid Technologies
+- fixed bug receiving a second wireless M-Bus message right after
+  another.
+- added support for additional units from the newest IEC 62056-6-2
+  standard
+- added gradle wrapper scripts to distribution so that gradle
+  installation is not needed
+
+v2.2.1 26-Feb-2016
+------------------
+- increased default timeout from 300ms to 500ms because it was too
+  short for many meters
+- made timeout configurable in all console applications
+- inserted sleep between SND_NKE and REQ_UD2 requests in ReadMeter and
+  ScanMeter console apps because some meters would otherwise discard
+  the REQ_UD2 request
+- fixed decoding subunit, tariff and storage number from DIFEs
+- added support for decoding new data records defined in EN
+  13757-3-2013
+
+v2.2.0 18-Nov-2015
+------------------
+- added support for writing to meters
+- added a command-line application for writing to meters
+- added support for scanning secondary addresses
+- refactored decoding function to improve performance
+- added support for Float32 decoding
+- several minor improvements
+- added possibility to select certain records/registers for readout
+- changed from java 6 to java 7
+
+v2.1.0 21-Jan-2015
+------------------
+- added support for secondary addressing using wired M-Bus
+
+v2.0.0 02-Dec-2014
+------------------
+- changed license from LGPL to GPLv3 or higher
+- added support for wireless M-Bus. Transceivers supported are from Amber
+  and RadioCrafts
+- API clean up, for better understanding
+- added detailed user guide on how M-Bus works and how jMBus is used.
+
+v1.3 17-Jul-2014
+----------------
+- added decoding support for more VIBs and DIBS
+- fixed build script to work with newest gradle
+- fixed support for two digit BCDs
+- BCD now extends class Number again
+- added run script for ScanForMeters app
+- added thorough description on how to get RXTX running
+- RXTX src + native libs are now included in the distribution
+- added documentation on how to compile your own nativ part of RXTX.
+- added integration tests for better testing
+
+v1.2 16-Jan-2014
+----------------
+- ScanForMeter application added that can be used to scan all primary
+  addresses for meters
+- fix parsing manufacturer id
+- added decoding of alternate exteded VIFE field
+- ReadMeter application now prints more valuable information
+
+v1.1.1 09-Jan-2014
+------------------
+- reinserted TimeoutException when reading
+- releasing to maven central repository
+
+v1.0.0 07-Jan-2014
+------------------
+- bug fix parsing manufacturer specific data
+- simple ReadMeter application is now part of the library. Its usage
+  is documented in README.txt
+- serialports can be closed and opened again through the API
+- DLMSUnit is now an Enum
+
+v0.10.0 04-Sep-2013
+-------------------
+- read now supports timeouts
+- serial port settings string is correctly parsed
+- data type can now be retrieved from DIF/VIF
+- finding correct serial port is now more efficient
+- bug fix in decoding DIF/VIF
+
+v0.9.8 15-Mar-2012
+------------------
+- changed build system to gradle
+- modified documentation and usage example
+
+v0.9.7 20-Oct-2011
+------------------
+- short message is send in one command in MBusLSAP to prevent timeout,
+  thanks to Hakan Gonene
+
+v0.9.6 19-Sep-2011
+------------------
+- added additional data types: data, date/time, varlen string
+- moved to maven
+
+v0.9.4 3-Dec-2010
+-----------------
+- Fixed build.xml file so a modfied library can be easily build.
+- Fixed some bugs when parsing M-Bus messages
+
+v0.9.3 17-Nov-2010 
+------------------
+- Fixed bug with integer treatment
+- Implemented application reset command
+- added voltage and current VIB interpretation
+- Debug output switch with org.openmuc.jmbus.debug system property
