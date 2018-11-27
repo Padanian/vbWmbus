@@ -466,12 +466,135 @@ Public Class DataRecord
         End If
 
     End Sub
+    Private Sub decodeE0(ByVal vif As Integer)
+        ' E0
+        If ((vif And 32) = 0) Then
+            Me.decodeE00(vif)
+        Else
+            Me.decode01(vif)
+        End If
+
+    End Sub
+    Private Sub decode01(ByVal vif As Integer)
+        ' E01
+        If ((vif And 16) = 0) Then
+            ' E010
+            If ((vif And 8) = 0) Then
+                ' E010 0
+                If ((vif And 4) = 0) Then
+                    ' E010 00
+                    Me.m_description = Description.ON_TIME
+                Else
+                    ' E010 01
+                    Me.m_description = Description.OPERATING_TIME
+                End If
+
+                Me.decodeTimeUnit(vif)
+            Else
+                ' E010 1
+                Me.m_description = Description.POWER
+                Me.multiplierExponent = ((vif And 7) - 3)
+                Me.unit = DlmsUnits.DlmsUnit.WATT
+            End If
+
+        Else
+            ' E011
+            If ((vif And 8) = 0) Then
+                ' E011 0
+                Me.m_description = Description.POWER
+                Me.multiplierExponent = (vif And 7)
+                Me.unit = DlmsUnits.DlmsUnit.JOULE_PER_HOUR
+            Else
+                ' E011 1
+                Me.m_description = Description.VOLUME_FLOW
+                Me.multiplierExponent = ((vif And 7) - 6)
+                Me.unit = DlmsUnits.DlmsUnit.CUBIC_METRE_PER_HOUR
+            End If
+
+        End If
+
+    End Sub
+    Private Sub decodeE00(ByVal vif As Integer)
+        ' E00
+        If ((vif And 16) = 0) Then
+            ' E000
+            If ((vif And 8) = 0) Then
+                ' E000 0
+                Me.m_description = Description.ENERGY
+                Me.multiplierExponent = ((vif And 7) - 3)
+                Me.unit = DlmsUnits.DlmsUnit.WATT_HOUR
+            Else
+                ' E000 1
+                Me.m_description = Description.ENERGY
+                Me.multiplierExponent = (vif And 7)
+                Me.unit = DlmsUnits.DlmsUnit.JOULE
+            End If
+
+        Else
+            ' E001
+            If ((vif And 8) = 0) Then
+                ' E001 0
+                Me.m_description = Description.VOLUME
+                Me.multiplierExponent = ((vif And 7) - 6)
+                Me.unit = DlmsUnits.DlmsUnit.CUBIC_METRE
+            Else
+                ' E001 1
+                Me.m_description = Description.MASS
+                Me.multiplierExponent = ((vif And 7) - 3)
+                Me.unit = DlmsUnits.DlmsUnit.KILOGRAM
+            End If
+
+        End If
+
+    End Sub
     Private Sub decodeE11(ByVal vif As Integer)
         ' E11
         If ((vif And 16) = 0) Then
             Me.decodeE110(vif)
         Else
             Me.decodeE111(vif)
+        End If
+
+    End Sub
+    Private Sub decodeE10(ByVal vif As Integer)
+        ' E10
+        If ((vif And 16) = 0) Then
+            ' E100
+            If ((vif And 8) = 0) Then
+                ' E100 0
+                Me.m_description = Description.VOLUME_FLOW_EXT
+                Me.multiplierExponent = ((vif And 7) - 7)
+                Me.unit = DlmsUnits.DlmsUnit.CUBIC_METRE_PER_MINUTE
+            Else
+                ' E100 1
+                Me.m_description = Description.VOLUME_FLOW_EXT
+                Me.multiplierExponent = ((vif And 7) - 9)
+                Me.unit = DlmsUnits.DlmsUnit.CUBIC_METRE_PER_SECOND
+            End If
+
+        Else
+            ' E101
+            If ((vif And 8) = 0) Then
+                ' E101 0
+                Me.m_description = Description.MASS_FLOW
+                Me.multiplierExponent = ((vif And 7) - 3)
+                Me.unit = DlmsUnits.DlmsUnit.KILOGRAM_PER_HOUR
+            Else
+                ' E101 1
+                If ((vif And 4) = 0) Then
+                    ' E101 10
+                    Me.m_description = Description.FLOW_TEMPERATURE
+                    Me.multiplierExponent = ((vif And 3) - 3)
+                    Me.unit = DlmsUnits.DlmsUnit.DEGREE_CELSIUS
+                Else
+                    ' E101 11
+                    Me.m_description = Description.RETURN_TEMPERATURE
+                    Me.multiplierExponent = ((vif And 3) - 3)
+                    Me.unit = DlmsUnits.DlmsUnit.DEGREE_CELSIUS
+                End If
+
+            End If
+
         End If
 
     End Sub
@@ -593,129 +716,6 @@ Public Class DataRecord
 
                 End If
 
-            End If
-
-        End If
-
-    End Sub
-    Private Sub decodeE10(ByVal vif As Integer)
-        ' E10
-        If ((vif And 16) = 0) Then
-            ' E100
-            If ((vif And 8) = 0) Then
-                ' E100 0
-                Me.m_description = Description.VOLUME_FLOW_EXT
-                Me.multiplierExponent = ((vif And 7) - 7)
-                Me.unit = DlmsUnits.DlmsUnit.CUBIC_METRE_PER_MINUTE
-            Else
-                ' E100 1
-                Me.m_description = Description.VOLUME_FLOW_EXT
-                Me.multiplierExponent = ((vif And 7) - 9)
-                Me.unit = DlmsUnits.DlmsUnit.CUBIC_METRE_PER_SECOND
-            End If
-
-        Else
-            ' E101
-            If ((vif And 8) = 0) Then
-                ' E101 0
-                Me.m_description = Description.MASS_FLOW
-                Me.multiplierExponent = ((vif And 7) - 3)
-                Me.unit = DlmsUnits.DlmsUnit.KILOGRAM_PER_HOUR
-            Else
-                ' E101 1
-                If ((vif And 4) = 0) Then
-                    ' E101 10
-                    Me.m_description = Description.FLOW_TEMPERATURE
-                    Me.multiplierExponent = ((vif And 3) - 3)
-                    Me.unit = DlmsUnits.DlmsUnit.DEGREE_CELSIUS
-                Else
-                    ' E101 11
-                    Me.m_description = Description.RETURN_TEMPERATURE
-                    Me.multiplierExponent = ((vif And 3) - 3)
-                    Me.unit = DlmsUnits.DlmsUnit.DEGREE_CELSIUS
-                End If
-
-            End If
-
-        End If
-
-    End Sub
-    Private Sub decodeE0(ByVal vif As Integer)
-        ' E0
-        If ((vif And 32) = 0) Then
-            Me.decodeE00(vif)
-        Else
-            Me.decode01(vif)
-        End If
-
-    End Sub
-    Private Sub decode01(ByVal vif As Integer)
-        ' E01
-        If ((vif And 16) = 0) Then
-            ' E010
-            If ((vif And 8) = 0) Then
-                ' E010 0
-                If ((vif And 4) = 0) Then
-                    ' E010 00
-                    Me.m_description = Description.ON_TIME
-                Else
-                    ' E010 01
-                    Me.m_description = Description.OPERATING_TIME
-                End If
-
-                Me.decodeTimeUnit(vif)
-            Else
-                ' E010 1
-                Me.m_description = Description.POWER
-                Me.multiplierExponent = ((vif And 7) - 3)
-                Me.unit = DlmsUnits.DlmsUnit.WATT
-            End If
-
-        Else
-            ' E011
-            If ((vif And 8) = 0) Then
-                ' E011 0
-                Me.m_description = Description.POWER
-                Me.multiplierExponent = (vif And 7)
-                Me.unit = DlmsUnits.DlmsUnit.JOULE_PER_HOUR
-            Else
-                ' E011 1
-                Me.m_description = Description.VOLUME_FLOW
-                Me.multiplierExponent = ((vif And 7) - 6)
-                Me.unit = DlmsUnits.DlmsUnit.CUBIC_METRE_PER_HOUR
-            End If
-
-        End If
-
-    End Sub
-    Private Sub decodeE00(ByVal vif As Integer)
-        ' E00
-        If ((vif And 16) = 0) Then
-            ' E000
-            If ((vif And 8) = 0) Then
-                ' E000 0
-                Me.m_description = Description.ENERGY
-                Me.multiplierExponent = ((vif And 7) - 3)
-                Me.unit = DlmsUnits.DlmsUnit.WATT_HOUR
-            Else
-                ' E000 1
-                Me.m_description = Description.ENERGY
-                Me.multiplierExponent = (vif And 7)
-                Me.unit = DlmsUnits.DlmsUnit.JOULE
-            End If
-
-        Else
-            ' E001
-            If ((vif And 8) = 0) Then
-                ' E001 0
-                Me.m_description = Description.VOLUME
-                Me.multiplierExponent = ((vif And 7) - 6)
-                Me.unit = DlmsUnits.DlmsUnit.CUBIC_METRE
-            Else
-                ' E001 1
-                Me.m_description = Description.MASS
-                Me.multiplierExponent = ((vif And 7) - 3)
-                Me.unit = DlmsUnits.DlmsUnit.KILOGRAM
             End If
 
         End If
