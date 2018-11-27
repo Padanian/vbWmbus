@@ -1,12 +1,14 @@
 ﻿Imports System.Runtime.CompilerServices
 Imports System.Text
+Imports Newtonsoft.Json
+
 Public Enum DataValueType
-    _LONG
-    _DOUBLE
-    _DATE
-    _STRING
-    _BCD
-    _NONE
+    _Long
+    _Double
+    _Date
+    _String
+    BCD
+    General
 End Enum
 Public Enum FunctionField
     Valore_Istantaneo
@@ -286,282 +288,367 @@ Module Module1
     Private dataLength As Integer
     Private storageNumber As Long
     Dim calendar As DateTime
+    Dim DecodedData As New DecodedDeviceClass
+    Private manufacturerId As String
+    Private manufacturerDetails As String
+    Private deviceId As String
+    Private version As Integer
+    Private deviceType As String
+
 
     Sub Main()
+        '                           0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9
+        Dim telegramma As String = "5044243434398583000D7A8C0000202F2F046D262D5B2B0406000000008410060000000001FD1710041303000000043B00000000042B00000000025B1700025F18000261EDFF03FD0C05000002FD0B30110000000"
+        'Dim telegramma As String = "204472341111111101077A000010852F2F000102030405060708090A0B0C0D0E0F9976"
+        'Dim telegramma As String = "2E44B05C10000000021B7AC40820052F2F0A6699010AFB1A930202FD971D01002F2F2F2F2F2F2F2F2F2F2F2F2F879E0D0A"
 
-        Dim telegramma As String = "32002E44B05C10000000021B7AC40820052F2F0A6699011A930202FD971D01002F2F2F2F2F2F2F2F2F2F2F2F2F879e0D0A"
-
-        '"5044243434398583000D7A8C0000202F2F046D262D5B2B0406000000008410060000000001FD1710041303000000043B00000000042B00000000025B1700025F18000261EDFF03FD0C05000002FD0B30110000000"
+        '
 
 
         Dim i As Integer = 0
-
-        Dim offset = telegramma.IndexOf("2F2F") / 2 + 1 ' 16
-
-
         Dim buffer As Byte() = {}
         Dim j As Integer = 0
+
         For j = 0 To telegramma.Length / 2 - 1
             Array.Resize(buffer, buffer.Length + 1)
             buffer(j) = Convert.ToInt16(Strings.Mid(telegramma, j * 2 + 1, 2), 16)
         Next
-starta:
-        i = offset + 1
-        If i > telegramma.Length Then
-            Console.ReadKey()
-        End If
 
-        decodeDib(buffer, i)
-        Dim dataField As Integer = buffer(i) And &HF
-        dataLength = dataField
-        storageNumber = (buffer(i) And &H40) >> 6
+        decodePreamble(buffer)
 
-        subunit = 0
-        tariff = 0
-        Dim numDife As Integer = 0
+        Dim offset = telegramma.IndexOf("2F2F") / 2 + 1 ' 16
 
 
-        While ((buffer(i + 1) And 128) = 128)
-            i += 1
-            subunit = subunit + (((buffer(i) And &H40) >> 6) << numDife)
-            tariff = tariff + ((buffer(i) And &H30) >> 4) << (numDife * 2)
-            storageNumber = storageNumber + ((buffer(i) And 15) << ((numDife * 4) + 1))
-            numDife = (numDife + 1)
 
-        End While
+        While i < telegramma.Length And i < buffer.Length - 5
+            i = offset + 1
 
-        unit = 0
-        multiplierExponent = 0
+                decodeDib(buffer, i)
+                Dim dataField As Integer = buffer(i) And &HF
+                dataLength = dataField
+                storageNumber = (buffer(i) And &H40) \ 2 ^ 6
 
-        dib = CopyofRange(buffer, offset + 1, i + 1)
+                subunit = 0
+                tariff = 0
+                Dim numDife As Integer = 0
 
 
-        i = i + 1
-        Dim vif As Integer = (buffer(i) And 255)
-        Dim decodeFurtherVifs As Boolean = False
+                While ((buffer(i + 1) And 128) = 128)
+                    i += 1
+                    subunit = subunit + (((buffer(i) And &H40) \ 2 ^ 6) * 2 ^ numDife)
+                    tariff = tariff + ((buffer(i) And &H30) \ 2 ^ 4) * 2 ^ (numDife * 2)
+                    storageNumber = storageNumber + ((buffer(i) And 15) * 2 ^ ((numDife * 4) + 1))
+                    numDife = (numDife + 1)
 
-        If (vif = 251) Then
-            decodeAlternateExtendedVif(buffer(i))
-            If ((buffer(i) And 128) = 128) Then
-                decodeFurtherVifs = True
-            End If
+                End While
 
-            i += 1 'verificare
-        ElseIf ((vif And 127) = 124) Then
-            i = (i + decodeUserDefinedVif(buffer, i))
-            If ((vif And 128) = 128) Then
-                decodeFurtherVifs = True
-            End If
+                unit = 0
+                multiplierExponent = 0
 
-        ElseIf (vif = 253) Then
-            decodeMainExtendedVif(buffer(i))
-            If ((buffer(i) And 128) = 128) Then
-                decodeFurtherVifs = True
-            End If
+                dib = CopyofRange(buffer, offset + 1, i + 1)
 
-            i += 1 'verificare
-        Else
-            decodeMainVif(vif)
-            If ((vif And 128) = 128) Then
-                decodeFurtherVifs = True
-            End If
 
-        End If
-        vib = CopyofRange(buffer, offset + dib.Length + 1, i + 1)
+                i = i + 1
+                Dim vif As Integer = (buffer(i) And 255)
+                Dim decodeFurtherVifs As Boolean = False
 
-        Select Case (dataField)
-            Case 0, 8
-                dataValue = Nothing
-                m_dataValueType = DataValueType._NONE
-            Case 1
-                dataValue = CLng(buffer(i = i + 1))
-                m_dataValueType = DataValueType._LONG
-            Case 2
-                If dateTypeG Then
-                    Dim day As Integer = (31 And buffer(i))
-                    i = i + 1
-                    Dim year1 As Integer = ((224 And buffer(i)) >> 5)
-                    Dim month As Integer = (15 And buffer(i))
-                    i = i + 1
-                    Dim year2 As Integer = ((240 And buffer(i)) >> 1)
-                    Dim year As Integer = (2000 + (year1 + year2))
-                    Dim calendar As DateTime = New DateTime(year, (month - 1), day, 0, 0, 0)
-                    dataValue = calendar.TimeOfDay
-                    m_dataValueType = DataValueType._DATE
-                Else
-                    i = i + 1
-                    dataValue = CDbl(((buffer(i) And 255) Or ((buffer(i + 1) And 255) << 8)))
-                    If dataValue > 32768 Then
-                        dataValue = 65535 - dataValue
-                    End If
-                    i = i + 1
-                        m_dataValueType = DataValueType._LONG
+                If (vif = 251) Then
+                    decodeAlternateExtendedVif(buffer(i))
+                    If ((buffer(i) And 128) = 128) Then
+                        decodeFurtherVifs = True
                     End If
 
-            Case 3
-                If ((buffer((i + 2)) And 128) = 128) Then
-                    ' negative
-                    dataValue = CLng((buffer(i + 1) And 255) Or
-                        ((buffer(i + 2) And 255) << 8) Or
-                        ((buffer(i + 3) And 255) << 16) Or 255 << 24)
-                    i = i + 3
+                    i += 1 'verificare
+                ElseIf ((vif And 127) = 124) Then
+                    i = (i + decodeUserDefinedVif(buffer, i))
+                    If ((vif And 128) = 128) Then
+                        decodeFurtherVifs = True
+                    End If
+
+                ElseIf (vif = 253) Then
+                    decodeMainExtendedVif(buffer(i))
+                    If ((buffer(i) And 128) = 128) Then
+                        decodeFurtherVifs = True
+                    End If
+
+                    i += 1 'verificare
                 Else
-                    dataValue = CLng(((buffer(i + 1) And 255) Or
-                        (((buffer(i + 2) And 255) << 8) Or
-                        ((buffer(i + 3) And 255) << 16))))
-                    i = i + 3
+                    decodeMainVif(vif)
+                    If ((vif And 128) = 128) Then
+                        decodeFurtherVifs = True
+                    End If
+
                 End If
+                vib = CopyofRange(buffer, offset + dib.Length + 1, i + 1)
 
-                m_dataValueType = DataValueType._LONG
-            Case 4
-                If dateTypeF Then
-                    i = i + 1
-                    Dim min As Integer = (buffer(i) And 63)
-                    Dim hour As Integer = (buffer(i) And 31)
-                    i = i + 1
-                    Dim yearh As Integer = ((96 And buffer(i)) >> 5)
-                    Dim day As Integer = (buffer(i) And 31)
-                    i = i + 1
-                    Dim year1 As Integer = ((224 And buffer(i)) >> 5)
-                    Dim mon As Integer = (buffer(i) And 15)
-                    i = i + 1
-                    Dim year2 As Integer = ((240 And buffer(i)) >> 1)
-                    If (yearh = 0) Then
-                        yearh = 1
-                    End If
-                    If mon = 0 Then mon = 1
-                    If day = 0 Then day = 1
+                Select Case (dataField)
+                    Case 0, 8
+                        dataValue = Nothing
+                        m_dataValueType = DataValueType.General
+                    Case 1
+                        dataValue = CLng(buffer(i = i + 1))
+                        m_dataValueType = DataValueType._Long
+                    Case 2
+                        If dateTypeG Then
+                            Dim day As Integer = (31 And buffer(i))
+                            i = i + 1
+                            Dim year1 As Integer = ((224 And buffer(i)) \ 2 ^ 5)
+                            Dim month As Integer = (15 And buffer(i))
+                            i = i + 1
+                            Dim year2 As Integer = ((240 And buffer(i)) \ 2 ^ 1)
+                            Dim year As Integer = (2000 + (year1 + year2))
+                            Dim calendar As DateTime = New DateTime(year, (month - 1), day, 0, 0, 0)
+                            dataValue = calendar.TimeOfDay
+                            m_dataValueType = DataValueType._Date
+                        Else
+                            i = i + 1
+                            dataValue = CLng(((buffer(i) And 255) Or ((buffer(i + 1) And 255) * 256)))
+                            If dataValue > 32768 Then
+                                dataValue = dataValue - 65535
+                            End If
+                            i = i + 1
+                            m_dataValueType = DataValueType._Long
+                        End If
 
-                    Dim year As Integer = 1900 + 100 * yearh + year1 + year2
-                    calendar = New DateTime(year, mon, day, hour, min, 0)
-                    dataValue = calendar.TimeOfDay
-                    m_dataValueType = DataValueType._DATE
-                Else
-                    i = i + 1
-                    dataValue = CLng((buffer(i) And 255) Or
-                        ((buffer(i + 1) And 255) << 8) Or
-                        ((buffer(i + 2) And 255) << 16) Or ((buffer(i + 3) And 255) << 24))
-                    i = i + 3
-                    m_dataValueType = DataValueType._LONG
-                End If
+                    Case 3
+                        If ((buffer((i + 2)) And 128) = 128) Then
+                            ' negative
+                            dataValue = CLng((buffer(i + 1) And 255) Or
+                        ((buffer(i + 2) And 255) * 256) Or
+                        ((buffer(i + 3) And 255) * 65536) Or 255 * 2 ^ 24)
+                            i = i + 3
+                        Else
+                            dataValue = CLng(((buffer(i + 1) And 255) Or
+                        (((buffer(i + 2) And 255) * 256) Or
+                        ((buffer(i + 3) And 255) * 65536))))
+                            i = i + 3
+                        End If
 
-            Case 5
+                        m_dataValueType = DataValueType._Long
+                    Case 4
+                        If dateTypeF Then
+                            i = i + 1
+                            Dim min As Integer = (buffer(i) And 63)
+                            Dim hour As Integer = (buffer(i) And 31)
+                            i = i + 1
+                            Dim yearh As Integer = ((96 And buffer(i)) \ 2 ^ 5)
+                            Dim day As Integer = (buffer(i) And 31)
+                            i = i + 1
+                            Dim year1 As Integer = ((224 And buffer(i)) \ 2 ^ 5)
+                            Dim mon As Integer = (buffer(i) And 15)
+                            i = i + 1
+                            Dim year2 As Integer = ((240 And buffer(i)) \ 2 ^ 1)
+                            If (yearh = 0) Then
+                                yearh = 1
+                            End If
+                            If mon = 0 Then mon = 1
+                            If day = 0 Then day = 1
+
+                            Dim year As Integer = 1900 + 100 * yearh + year1 + year2
+                            calendar = New DateTime(year, mon - 1, day, hour, min, 0)
+                            dataValue = calendar.TimeOfDay
+                            m_dataValueType = DataValueType._Date
+                        Else
+                            i = i + 1
+                            dataValue = CLng((buffer(i) And 255) Or
+                        ((buffer(i + 1) And 255) * 256) Or
+                        ((buffer(i + 2) And 255) * 65536) Or ((buffer(i + 3) And 255) * 2 ^ 24))
+                            i = i + 3
+                            m_dataValueType = DataValueType._Long
+                        End If
+
+                    Case 5
                 'Dim doubleDatavalue As Double = ByteBuffer.wrap(buffer, i, 4).order(ByteOrder.LITTLE_ENDIAN).getFloat
                 'i = (i + 4)
                 'dataValue = CDbl(doubleDatavalue)
                 'm_dataValueType = DataValueType._DOUBLE
-            Case 6
-                If ((buffer((i + 5)) And 128) = 128) Then
-                    ' negative
-                    i = i + 1
-                    dataValue = CLng((buffer(i) And 255) Or
-                        (((buffer(i + 1) And 255) << 8)) Or
-                        (((buffer(i + 2) And 255) << 16)) Or
-                        (((buffer(i + 3) And 255) << 24)) Or
-                        (((CType(buffer(i + 4), Long) And 255) << 32)) Or
-                        (((CType(buffer(i + 5), Long) And 255) << 40)) Or (255 << 48) Or (256 << 56))
-                    i = i + 5
-                Else
-                    i = i + 1
-                    dataValue = CLng(((buffer(i) And 255) Or
-                        (((buffer(i + 1) And 255) << 8) Or
-                        (((buffer(i + 2) And 255) << 16) Or
-                        (((buffer(i + 3) And 255) << 24) Or
-                        (((CType(buffer(i + 4), Long) And 255) << 32) Or
-                        ((CType(buffer(i + 5), Long) And 255) << 40)))))))
-                    i = i + 5
-                End If
+                    Case 6
+                        If ((buffer((i + 5)) And 128) = 128) Then
+                            ' negative
+                            i = i + 1
+                            dataValue = CLng((buffer(i) And 255) Or
+                        (((buffer(i + 1) And 255) * 256)) Or
+                        (((buffer(i + 2) And 255) * 2 ^ 16)) Or
+                        (((buffer(i + 3) And 255) * 2 ^ 24)) Or
+                        (((CType(buffer(i + 4), Long) And 255) * 2 ^ 32)) Or
+                        (((CType(buffer(i + 5), Long) And 255) * 2 ^ 40)) Or (255 * 2 ^ 48) Or (256 << 56))
+                            i = i + 5
+                        Else
+                            i = i + 1
+                            dataValue = CLng(((buffer(i) And 255) Or
+                        (((buffer(i + 1) And 255) * 256) Or
+                        (((buffer(i + 2) And 255) * 65536) Or
+                        (((buffer(i + 3) And 255) * 2 ^ 24) Or
+                        (((CType(buffer(i + 4), Long) And 255) * 2 ^ 32) Or
+                        ((CType(buffer(i + 5), Long) And 255) * 2 ^ 40)))))))
+                            i = i + 5
+                        End If
 
-                m_dataValueType = DataValueType._LONG
-            Case 7
-                dataValue = CLng(((buffer(i = i + 1) And 255) Or (((buffer(i = i + 1) And 255) + 8) _
+                        m_dataValueType = DataValueType._Long
+                    Case 7
+                        dataValue = CLng(((buffer(i = i + 1) And 255) Or (((buffer(i = i + 1) And 255) + 8) _
                                 Or (((buffer(i = i + 1) And 255) + 16) _
                                 Or (((buffer(i = i + 1) And 255) + 24) _
                                 Or (((CType(buffer(i = i + 1), Long) And 255) + 32) _
                                 Or (((CType(buffer(i = i + 1), Long) And 255) + 40) _
                                 Or (((CType(buffer(i = i + 1), Long) And 255) + 48) _
                                 Or ((CType(buffer(i = i + 1), Long) And 255) + 56)))))))))
-                m_dataValueType = DataValueType._LONG
-            Case 9
-                i = setBCD(buffer, i, 1)
-            Case 10
-                i = setBCD(buffer, i, 2)
-            Case 11
-                i = setBCD(buffer, i, 3)
-            Case 12
-                i = setBCD(buffer, i, 4)
-            Case 14
-                i = setBCD(buffer, i, 6)
-            Case 13
-                Dim variableLength As Integer = (buffer(i + 1) And 255)
-                i = i + 1
-                Dim dataLength0x0d As Integer
-                If (variableLength < 192) Then
-                    dataLength0x0d = variableLength
-                ElseIf ((variableLength >= 192) AndAlso (variableLength <= 201)) Then
-                    dataLength0x0d = (2 * (variableLength - 192))
-                ElseIf ((variableLength >= 208) AndAlso (variableLength <= 217)) Then
-                    dataLength0x0d = (2 * (variableLength - 208))
-                ElseIf ((variableLength >= 224) AndAlso (variableLength <= 239)) Then
-                    dataLength0x0d = (variableLength - 224)
-                ElseIf (variableLength = 248) Then
-                    dataLength0x0d = 4
+                        m_dataValueType = DataValueType._Long
+                    Case 9
+                        i = setBCD(buffer, i, 1)
+                    Case 10
+                        i = setBCD(buffer, i, 2)
+                    Case 11
+                        i = setBCD(buffer, i, 3)
+                    Case 12
+                        i = setBCD(buffer, i, 4)
+                    Case 14
+                        i = setBCD(buffer, i, 6)
+                    Case 13
+                        Dim variableLength As Integer = (buffer(i + 1) And 255)
+                        i = i + 1
+                        Dim dataLength0x0d As Integer
+                        If (variableLength < 192) Then
+                            dataLength0x0d = variableLength
+                        ElseIf ((variableLength >= 192) AndAlso (variableLength <= 201)) Then
+                            dataLength0x0d = (2 * (variableLength - 192))
+                        ElseIf ((variableLength >= 208) AndAlso (variableLength <= 217)) Then
+                            dataLength0x0d = (2 * (variableLength - 208))
+                        ElseIf ((variableLength >= 224) AndAlso (variableLength <= 239)) Then
+                            dataLength0x0d = (variableLength - 224)
+                        ElseIf (variableLength = 248) Then
+                            dataLength0x0d = 4
+                        Else
+                            Throw New Exception(("Unsupported LVAR Field: " + variableLength))
+                        End If
+
+
+                        Dim rawData() As Byte = New Byte((dataLength0x0d) - 1) {}
+                        For k = 0 To dataLength0x0d - 1
+                            rawData(k) = buffer(i + dataLength0x0d - 1 - k)
+                            k = (k + 1)
+                        Next
+
+                        i = (i + dataLength0x0d)
+                        dataValue = System.Text.Encoding.Default.GetString(rawData)
+                        m_dataValueType = DataValueType._String
+                    Case Else
+                        Dim msg As String = String.Format("Unknown Data Field in DIF: " & dataField.ToString)
+                        Throw New Exception(msg)
+                End Select
+
+                If dataValue Is Nothing Then
+                    dataValue = 0
+                End If
+                Dim DataX As String = ""
+                If IsNumeric(dataValue) Then
+                    DataX = Format(dataValue * 10 ^ multiplierExponent, "###0.##")
+                ElseIf TypeOf (dataValue) Is Byte() Then
+                    If dataValue.length = 1 Then
+                        Dim temp As Integer
+                        Integer.TryParse(Hex(dataValue(0)), temp)
+                        DataX = Format(temp * 10 ^ multiplierExponent, "###0.##")
+                    ElseIf dataValue.length = 2 Then
+                        Dim temp As Integer
+                        Integer.TryParse(Hex(dataValue(1)) & Hex(dataValue(0)), temp)
+                        DataX = Format(temp * 10 ^ multiplierExponent, "###0.##")
+                    ElseIf dataValue.length = 3 Then
+                        Dim temp As Integer
+                        Integer.TryParse(Hex(dataValue(2)) & Hex(dataValue(1)) & Hex(dataValue(0)), temp)
+                        DataX = Format(temp * 10 ^ multiplierExponent, "###0.##")
+                    ElseIf dataValue.length = 4 Then
+                        Dim temp As Integer
+                        Integer.TryParse(Hex(dataValue(3)) & Hex(dataValue(2)) & Hex(dataValue(1)) & Hex(dataValue(0)), temp)
+                        DataX = Format(temp * 10 ^ multiplierExponent, "###0.##")
+
+                    End If
                 Else
-                    Throw New Exception(("Unsupported LVAR Field: " + variableLength))
+                    DataX = dataValue.ToString
+                End If
+                If TypeOf (dataValue) Is TimeSpan Then
+                    DataX = calendar.ToString
                 End If
 
+                dateTypeF = False
+                dateTypeG = False
 
-                Dim rawData() As Byte = New Byte((dataLength0x0d) - 1) {}
-                Dim k As Integer = 0
-                Do While (k < dataLength0x0d)
-                    rawData(k) = buffer((i + (dataLength0x0d - (1 - k))))
-                    k = (k + 1)
-                Loop
+                Dim aggiungi As Integer
+                If TypeOf (dataValue) Is Byte() Then
+                    aggiungi = dataValue.length
+                Else
+                    aggiungi = dataField
+                End If
 
-                i = (i + dataLength0x0d)
-                dataValue = System.Text.Encoding.Unicode.GetString(rawData)
-                m_dataValueType = DataValueType._STRING
-            Case Else
-                Dim msg As String = String.Format("Unknown Data Field in DIF: " & dataField.ToString)
-                Throw New Exception(msg)
-        End Select
+                offset = offset + dib.Length + vib.Length + aggiungi
 
-        If dataValue Is Nothing Then
-            dataValue = 0
-        End If
-        Dim DataX As String
-        If IsNumeric(dataValue) Then
-            DataX = Format(dataValue * 10 ^ multiplierExponent, "###0.##")
-        ElseIf TypeOf (datavalue) Is Byte() Then
-            Dim temp As Integer
-            Integer.TryParse(Hex(dataValue(1)) & Hex(dataValue(0)), temp)
-            DataX = Format(temp * 10 ^ multiplierExponent, "###0.##")
-        Else
-            DataX = dataValue.ToString
-        End If
-        If TypeOf (dataValue) Is TimeSpan Then
-            DataX = calendar.ToString
-        End If
-        Console.WriteLine(FunctionField.GetName(GetType(FunctionField), m_functionField) & " " &
-                    Description.GetName(GetType(Description), m_description) & " " &
-                    DataX & " " & unit.ToString)
 
-        dateTypeF = False
-        dateTypeG = False
+                Array.Resize(DecodedData.DecodedDataField, DecodedData.DecodedDataField.Length + 1)
+                DecodedData.DecodedDataField(DecodedData.DecodedDataField.Length - 1).calendar = calendar
+                DecodedData.DecodedDataField(DecodedData.DecodedDataField.Length - 1).datavalue = dataValue
+                DecodedData.DecodedDataField(DecodedData.DecodedDataField.Length - 1).multiplierexponent = multiplierExponent
+                DecodedData.DecodedDataField(DecodedData.DecodedDataField.Length - 1).m_datavaluetype = m_dataValueType
+                DecodedData.DecodedDataField(DecodedData.DecodedDataField.Length - 1).m_description = m_description
+                DecodedData.DecodedDataField(DecodedData.DecodedDataField.Length - 1).m_functionField = m_functionField
+                DecodedData.DecodedDataField(DecodedData.DecodedDataField.Length - 1).storagenumber = storageNumber
+                DecodedData.DecodedDataField(DecodedData.DecodedDataField.Length - 1).subunit = subunit
+                DecodedData.DecodedDataField(DecodedData.DecodedDataField.Length - 1).tariff = tariff
+                DecodedData.DecodedDataField(DecodedData.DecodedDataField.Length - 1).unit = unit
+                DecodedData.manufacturerId = manufacturerId
+                DecodedData.manufacturerDetails = manufacturerDetails
+                DecodedData.deviceId = deviceId
+                DecodedData.version = version
+                DecodedData.deviceType = deviceType
 
-        Dim aggiungi As Integer
-        If TypeOf (dataValue) Is Byte() Then
-            aggiungi = dataValue.length
-        Else
-            aggiungi = 1
-        End If
+                calendar = New DateTime
+                dataValue = ""
+                multiplierExponent = 0
+                m_dataValueType = 0
+                m_description = 0
+                m_functionField = 0
+                storageNumber = 0
+                subunit = 0
+                tariff = 0
+            End While
 
-        offset = offset + dib.Length + vib.Length + aggiungi
 
-        GoTo starta
-
+salta:
+        Dim json As String = JsonConvert.SerializeObject(DecodedData)
+        Console.WriteLine(json)
+        Console.ReadKey()
 
     End Sub
+    Private Sub decodePreamble(ByVal buffer As Byte())
+
+        Dim bais As Byte() = CopyofRange(buffer, 0, 16)
+        'Me.hashCode = Arrays.hashCode(Me.bytes)
+        Try
+            deviceId = decodeDeviceId(bais)
+            manufacturerId = decodeManufacturerId(bais)
+            manufacturerDetails = selectManufacturerDetailsClass.selectManufacturerDetails(manufacturerId)
+
+            version = (bais(8) And 255)
+            deviceType = [Enum].GetName(GetType(DeviceType), bais(9) And 255)
+
+        Catch e As Exception
+            ' should not occur
+            Throw New Exception(e.Message)
+        End Try
+    End Sub
+    Private Function decodeDeviceId(ByVal bais As Byte()) As String
+        Dim idArray As String = Hex(bais(7)).ToString.PadLeft(2, "0") & Hex(bais(6)).ToString.PadLeft(2, "0") &
+            Hex(bais(5)).ToString.PadLeft(2, "0") & Hex(bais(4)).ToString.PadLeft(2, "0")
+        Return idArray
+    End Function
+    Private Function decodeManufacturerId(ByVal bais As Byte()) As String
+        Dim manufacturerIdAsInt As Integer = ((bais(2) And 255) + (bais(3) * 256))
+        Dim c As Char = ChrW((manufacturerIdAsInt And 31) + 64)
+        manufacturerIdAsInt = (manufacturerIdAsInt \ 2 ^ 5)
+        Dim c1 As Char = ChrW((manufacturerIdAsInt And 31) + 64)
+        manufacturerIdAsInt = (manufacturerIdAsInt \ 2 ^ 5)
+        Dim c2 As Char = ChrW((manufacturerIdAsInt And 31) + 64)
+        Dim sb As New StringBuilder
+        Return sb.Append(c2).Append(c1).Append(c).ToString
+    End Function
     Private Function decodeUserDefinedVif(ByVal buffer() As Byte, ByVal offset As Integer) As Integer
         Dim length As Integer = buffer(offset)
         Dim sb As StringBuilder = New StringBuilder
@@ -1106,176 +1193,9 @@ starta:
         End If
 
     End Sub
-    Public Function getUnit(ByVal i As Integer) As String
-
-        Dim value As String = String.Empty
-
-        Select Case i
-            Case DlmsUnit.YEAR
-                value = "a"
-            Case DlmsUnit.MONTH
-                value = "mo"
-            Case DlmsUnit.WEEK
-                value = "wk"
-            Case DlmsUnit.DAY
-                value = "d"
-            Case DlmsUnit.HOUR
-                value = "h"
-            Case DlmsUnit.MIN
-                value = "min"
-            Case DlmsUnit.SECOND
-                value = "s"
-            Case DlmsUnit.DEGREE
-                value = "°"
-            Case DlmsUnit.DEGREE_CELSIUS
-                value = "°C"
-            Case DlmsUnit.CURRENCY
-                value = String.Empty
-            Case DlmsUnit.METRE
-                value = "m"
-            Case DlmsUnit.METRE_PER_SECOND
-                value = "m/s"
-            Case DlmsUnit.CUBIC_METRE
-                value = "m³"
-            Case DlmsUnit.CUBIC_METRE_CORRECTED
-                value = "m³"
-            Case DlmsUnit.CUBIC_METRE_PER_HOUR
-                value = "m³/h"
-            Case DlmsUnit.CUBIC_METRE_PER_HOUR_CORRECTED
-                value = "m³/h"
-            Case DlmsUnit.CUBIC_METRE_PER_DAY
-                value = "m³/d"
-            Case DlmsUnit.CUBIC_METRE_PER_DAY_CORRECTED
-                value = "m³/d"
-            Case DlmsUnit.LITRE
-                value = "l"
-            Case DlmsUnit.KILOGRAM
-                value = "kg"
-            Case DlmsUnit.NEWTON
-                value = "N"
-            Case DlmsUnit.NEWTONMETER
-                value = "Nm"
-            Case DlmsUnit.PASCAL
-                value = "Pa"
-            Case DlmsUnit.BAR
-                value = "bar"
-            Case DlmsUnit.JOULE
-                value = "J"
-            Case DlmsUnit.JOULE_PER_HOUR
-                value = "J/h"
-            Case DlmsUnit.WATT
-                value = "W"
-            Case DlmsUnit.VOLT_AMPERE
-                value = "VA"
-            Case DlmsUnit.VAR
-                value = "var"
-            Case DlmsUnit.WATT_HOUR
-                value = "Wh"
-            Case DlmsUnit.VOLT_AMPERE_HOUR
-                value = "VAh"
-            Case DlmsUnit.VAR_HOUR
-                value = "varh"
-            Case DlmsUnit.AMPERE
-                value = "A"
-            Case DlmsUnit.COULOMB
-                value = "C"
-            Case DlmsUnit.VOLT
-                value = "V"
-            Case DlmsUnit.VOLT_PER_METRE
-                value = "V/m"
-            Case DlmsUnit.FARAD
-                value = "F"
-            Case DlmsUnit.OHM
-                value = "Ohm"
-            Case DlmsUnit.OHM_METRE
-                value = "Ohm m²/m"
-            Case DlmsUnit.WEBER
-                value = "Wb"
-            Case DlmsUnit.TESLA
-                value = "T"
-            Case DlmsUnit.AMPERE_PER_METRE
-                value = "A/m"
-            Case DlmsUnit.HENRY
-                value = "H"
-            Case DlmsUnit.HERTZ
-                value = "Hz"
-            Case DlmsUnit.ACTIVE_ENERGY_METER_CONSTANT_OR_PULSE_VALUE
-                value = "1/=Wh"
-            Case DlmsUnit.REACTIVE_ENERGY_METER_CONSTANT_OR_PULSE_VALUE
-                value = "1/=varh"
-            Case DlmsUnit.APPARENT_ENERGY_METER_CONSTANT_OR_PULSE_VALUE
-                value = "1=VAh"
-            Case DlmsUnit.VOLT_SQUARED_HOURS
-                value = "V²h"
-            Case DlmsUnit.AMPERE_SQUARED_HOURS
-                value = "A²h"
-            Case DlmsUnit.KILOGRAM_PER_SECOND
-                value = "kg/s"
-            Case DlmsUnit.SIEMENS
-                value = "S"
-            Case DlmsUnit.KELVIN
-                value = "K"
-            Case DlmsUnit.VOLT_SQUARED_HOUR_METER_CONSTANT_OR_PULSE_VALUE
-                value = "1/=V²h)"
-            Case DlmsUnit.AMPERE_SQUARED_HOUR_METER_CONSTANT_OR_PULSE_VALUE
-                value = "1/=A²h"
-            Case DlmsUnit.METER_CONSTANT_OR_PULSE_VALUE
-                value = "1/m³"
-            Case DlmsUnit.PERCENTAGE
-                value = "%"
-            Case DlmsUnit.AMPERE_HOUR
-                value = "Ah"
-            Case DlmsUnit.ENERGY_PER_VOLUME
-                value = "Wh/m³"
-            Case DlmsUnit.CALORIFIC_VALUE
-                value = "J/m³"
-            Case DlmsUnit.MOLE_PERCENT
-                value = "Mol %"
-            Case DlmsUnit.MASS_DENSITY
-                value = "g/m³"
-            Case DlmsUnit.PASCAL_SECOND
-                value = "Pa s"
-            Case DlmsUnit.SPECIFIC_ENERGY
-                value = "J/kg"
-            Case DlmsUnit.SIGNAL_STRENGTH
-                value = "dBm"
-            Case DlmsUnit.SIGNAL_STRENGTH_MICROVOLT
-                value = "dBµv"
-            Case DlmsUnit.LOGARITHMIC
-                value = "dB"
-            Case DlmsUnit.RESERVED
-                value = ""
-            Case DlmsUnit.OTHER_UNIT
-                value = "other"
-            Case DlmsUnit.COUNT
-                value = "count"
-            Case DlmsUnit.CUBIC_METRE_PER_SECOND
-                value = "m³/s"
-            Case DlmsUnit.CUBIC_METRE_PER_MINUTE
-                value = "m³/min"
-            Case DlmsUnit.KILOGRAM_PER_HOUR
-                value = "kg/h"
-            Case DlmsUnit.CUBIC_FEET
-                value = "cft"
-            Case DlmsUnit.US_GALLON
-                value = "Impl. gal."
-            Case DlmsUnit.US_GALLON_PER_MINUTE
-                value = "Impl. gal./min"
-            Case DlmsUnit.US_GALLON_PER_HOUR
-                value = "Impl. gal./h"
-            Case DlmsUnit.DEGREE_FAHRENHEIT
-                value = "°F"
-
-        End Select
-
-        Return value
-    End Function
     Private Sub decodeDib(ByVal buffer() As Byte, ByVal i As Integer)
-        If i >= buffer.Length Then
-            Console.ReadKey()
-            End
-        End If
-        Dim ff As Integer = ((buffer(i) And &H30) >> 4)
+
+        Dim ff As Integer = ((buffer(i) And &H30) \ 2 ^ 4)
         Select Case ff
             Case 0
                 m_functionField = FunctionField.Valore_Istantaneo
@@ -1617,7 +1537,205 @@ starta:
     End Function
     Private Function setBCD(ByVal buffer() As Byte, ByVal i As Integer, ByVal j As Integer) As Integer
         dataValue = CopyofRange(buffer, i + 1, (i + j + 1))
-        m_dataValueType = DataValueType._BCD
+        m_dataValueType = DataValueType.BCD
         Return (i + j)
     End Function
+    Public Function getUnit(ByVal i As Integer) As String
+
+        Dim value As String = String.Empty
+
+        Select Case i
+            Case DlmsUnit.YEAR
+                value = "a"
+            Case DlmsUnit.MONTH
+                value = "mo"
+            Case DlmsUnit.WEEK
+                value = "wk"
+            Case DlmsUnit.DAY
+                value = "d"
+            Case DlmsUnit.HOUR
+                value = "h"
+            Case DlmsUnit.MIN
+                value = "min"
+            Case DlmsUnit.SECOND
+                value = "s"
+            Case DlmsUnit.DEGREE
+                value = "°"
+            Case DlmsUnit.DEGREE_CELSIUS
+                value = "°C"
+            Case DlmsUnit.CURRENCY
+                value = String.Empty
+            Case DlmsUnit.METRE
+                value = "m"
+            Case DlmsUnit.METRE_PER_SECOND
+                value = "m/s"
+            Case DlmsUnit.CUBIC_METRE
+                value = "m³"
+            Case DlmsUnit.CUBIC_METRE_CORRECTED
+                value = "m³"
+            Case DlmsUnit.CUBIC_METRE_PER_HOUR
+                value = "m³/h"
+            Case DlmsUnit.CUBIC_METRE_PER_HOUR_CORRECTED
+                value = "m³/h"
+            Case DlmsUnit.CUBIC_METRE_PER_DAY
+                value = "m³/d"
+            Case DlmsUnit.CUBIC_METRE_PER_DAY_CORRECTED
+                value = "m³/d"
+            Case DlmsUnit.LITRE
+                value = "l"
+            Case DlmsUnit.KILOGRAM
+                value = "kg"
+            Case DlmsUnit.NEWTON
+                value = "N"
+            Case DlmsUnit.NEWTONMETER
+                value = "Nm"
+            Case DlmsUnit.PASCAL
+                value = "Pa"
+            Case DlmsUnit.BAR
+                value = "bar"
+            Case DlmsUnit.JOULE
+                value = "J"
+            Case DlmsUnit.JOULE_PER_HOUR
+                value = "J/h"
+            Case DlmsUnit.WATT
+                value = "W"
+            Case DlmsUnit.VOLT_AMPERE
+                value = "VA"
+            Case DlmsUnit.VAR
+                value = "var"
+            Case DlmsUnit.WATT_HOUR
+                value = "Wh"
+            Case DlmsUnit.VOLT_AMPERE_HOUR
+                value = "VAh"
+            Case DlmsUnit.VAR_HOUR
+                value = "varh"
+            Case DlmsUnit.AMPERE
+                value = "A"
+            Case DlmsUnit.COULOMB
+                value = "C"
+            Case DlmsUnit.VOLT
+                value = "V"
+            Case DlmsUnit.VOLT_PER_METRE
+                value = "V/m"
+            Case DlmsUnit.FARAD
+                value = "F"
+            Case DlmsUnit.OHM
+                value = "Ohm"
+            Case DlmsUnit.OHM_METRE
+                value = "Ohm m²/m"
+            Case DlmsUnit.WEBER
+                value = "Wb"
+            Case DlmsUnit.TESLA
+                value = "T"
+            Case DlmsUnit.AMPERE_PER_METRE
+                value = "A/m"
+            Case DlmsUnit.HENRY
+                value = "H"
+            Case DlmsUnit.HERTZ
+                value = "Hz"
+            Case DlmsUnit.ACTIVE_ENERGY_METER_CONSTANT_OR_PULSE_VALUE
+                value = "1/=Wh"
+            Case DlmsUnit.REACTIVE_ENERGY_METER_CONSTANT_OR_PULSE_VALUE
+                value = "1/=varh"
+            Case DlmsUnit.APPARENT_ENERGY_METER_CONSTANT_OR_PULSE_VALUE
+                value = "1=VAh"
+            Case DlmsUnit.VOLT_SQUARED_HOURS
+                value = "V²h"
+            Case DlmsUnit.AMPERE_SQUARED_HOURS
+                value = "A²h"
+            Case DlmsUnit.KILOGRAM_PER_SECOND
+                value = "kg/s"
+            Case DlmsUnit.SIEMENS
+                value = "S"
+            Case DlmsUnit.KELVIN
+                value = "K"
+            Case DlmsUnit.VOLT_SQUARED_HOUR_METER_CONSTANT_OR_PULSE_VALUE
+                value = "1/=V²h)"
+            Case DlmsUnit.AMPERE_SQUARED_HOUR_METER_CONSTANT_OR_PULSE_VALUE
+                value = "1/=A²h"
+            Case DlmsUnit.METER_CONSTANT_OR_PULSE_VALUE
+                value = "1/m³"
+            Case DlmsUnit.PERCENTAGE
+                value = "%"
+            Case DlmsUnit.AMPERE_HOUR
+                value = "Ah"
+            Case DlmsUnit.ENERGY_PER_VOLUME
+                value = "Wh/m³"
+            Case DlmsUnit.CALORIFIC_VALUE
+                value = "J/m³"
+            Case DlmsUnit.MOLE_PERCENT
+                value = "Mol %"
+            Case DlmsUnit.MASS_DENSITY
+                value = "g/m³"
+            Case DlmsUnit.PASCAL_SECOND
+                value = "Pa s"
+            Case DlmsUnit.SPECIFIC_ENERGY
+                value = "J/kg"
+            Case DlmsUnit.SIGNAL_STRENGTH
+                value = "dBm"
+            Case DlmsUnit.SIGNAL_STRENGTH_MICROVOLT
+                value = "dBµv"
+            Case DlmsUnit.LOGARITHMIC
+                value = "dB"
+            Case DlmsUnit.RESERVED
+                value = ""
+            Case DlmsUnit.OTHER_UNIT
+                value = "other"
+            Case DlmsUnit.COUNT
+                value = "count"
+            Case DlmsUnit.CUBIC_METRE_PER_SECOND
+                value = "m³/s"
+            Case DlmsUnit.CUBIC_METRE_PER_MINUTE
+                value = "m³/min"
+            Case DlmsUnit.KILOGRAM_PER_HOUR
+                value = "kg/h"
+            Case DlmsUnit.CUBIC_FEET
+                value = "cft"
+            Case DlmsUnit.US_GALLON
+                value = "Impl. gal."
+            Case DlmsUnit.US_GALLON_PER_MINUTE
+                value = "Impl. gal./min"
+            Case DlmsUnit.US_GALLON_PER_HOUR
+                value = "Impl. gal./h"
+            Case DlmsUnit.DEGREE_FAHRENHEIT
+                value = "°F"
+
+        End Select
+
+        Return value
+    End Function
+
 End Module
+Public Class DecodedDeviceClass
+    Public Property manufacturerId As String
+    Public Property manufacturerDetails As String
+    Public Property deviceId As String
+    Public Property version As Integer
+    Public Property deviceType As String
+    Public DecodedDataField As DecodedDataFields() = {}
+    Public Sub New()
+        Me.manufacturerId = ""
+        Me.manufacturerDetails = ""
+        Me.deviceId = ""
+        Me.version = 0
+        Me.deviceType = ""
+    End Sub
+End Class
+Public Structure DecodedDataFields
+    Public m_description As Description
+    Public m_functionField As FunctionField
+    Public subunit As Long
+    Public tariff As Integer
+    Public storagenumber As Long
+    Public calendar As DateTime
+    Public datavalue As Object
+    Public m_datavaluetype As DataValueType
+    Public unit As DlmsUnit
+    Public ReadOnly Property unitSymbol As String
+        Get
+            Return getUnit(Me.unit)
+        End Get
+    End Property
+    Public Property multiplierexponent As Integer
+End Structure
+
