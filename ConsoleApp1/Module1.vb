@@ -289,16 +289,19 @@ Module Module1
 
     Sub Main()
 
-        Dim telegramma As String = "5044243434398583000D7A8C0000202F2F046D262D5B2B0406000000008410060000000001FD1710041303000000043B00000000042B00000000025B1700025F18000261EDFF03FD0C05000002FD0B30110000000"
+        Dim telegramma As String = "32002E44B05C10000000021B7AC40820052F2F0A6699011A930202FD971D01002F2F2F2F2F2F2F2F2F2F2F2F2F879e0D0A"
+
+        '"5044243434398583000D7A8C0000202F2F046D262D5B2B0406000000008410060000000001FD1710041303000000043B00000000042B00000000025B1700025F18000261EDFF03FD0C05000002FD0B30110000000"
+
 
         Dim i As Integer = 0
 
-        Dim offset = 16
+        Dim offset = telegramma.IndexOf("2F2F") / 2 + 1 ' 16
 
 
         Dim buffer As Byte() = {}
         Dim j As Integer = 0
-        For j = 0 To telegramma.Length / 2
+        For j = 0 To telegramma.Length / 2 - 1
             Array.Resize(buffer, buffer.Length + 1)
             buffer(j) = Convert.ToInt16(Strings.Mid(telegramma, j * 2 + 1, 2), 16)
         Next
@@ -519,7 +522,7 @@ starta:
                 dataValue = System.Text.Encoding.Unicode.GetString(rawData)
                 m_dataValueType = DataValueType._STRING
             Case Else
-                Dim msg As String = String.Format("Unknown Data Field in DIF: %02X.", dataField)
+                Dim msg As String = String.Format("Unknown Data Field in DIF: " & dataField.ToString)
                 Throw New Exception(msg)
         End Select
 
@@ -529,6 +532,10 @@ starta:
         Dim DataX As String
         If IsNumeric(dataValue) Then
             DataX = Format(dataValue * 10 ^ multiplierExponent, "###0.##")
+        ElseIf TypeOf (datavalue) Is Byte() Then
+            Dim temp As Integer
+            Integer.TryParse(Hex(dataValue(1)) & Hex(dataValue(0)), temp)
+            DataX = Format(temp * 10 ^ multiplierExponent, "###0.##")
         Else
             DataX = dataValue.ToString
         End If
@@ -542,7 +549,7 @@ starta:
         dateTypeF = False
         dateTypeG = False
 
-        offset = offset + dataLength + dib.Length + vib.Length 
+        offset = offset + dib.Length + vib.Length + dataLength
 
         GoTo starta
 
@@ -1602,7 +1609,7 @@ starta:
         Return arrb
     End Function
     Private Function setBCD(ByVal buffer() As Byte, ByVal i As Integer, ByVal j As Integer) As Integer
-        dataValue = CopyofRange(buffer, i, (i + j))
+        dataValue = CopyofRange(buffer, i + 1, (i + j + 1))
         m_dataValueType = DataValueType._BCD
         Return (i + j)
     End Function
