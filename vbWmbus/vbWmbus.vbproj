@@ -64,9 +64,14 @@
     <Import Include="System.Threading.Tasks" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Class1.vb" />
+    <Compile Include="BCD.vb" />
+    <Compile Include="EnumerazioniWMBus.vb" />
+    <Compile Include="CRC16.vb" />
+    <Compile Include="DataRecord.vb" />
     <Compile Include="Arrays.vb" />
-    <Compile Include="DlmsUnit.vb" />
+    <Compile Include="DeviceType.vb" />
+    <Compile Include="DlmsUnits.vb" />
+    <Compile Include="EncryptionModes.vb" />
     <Compile Include="My Project\AssemblyInfo.vb" />
     <Compile Include="My Project\Application.Designer.vb">
       <AutoGen>True</AutoGen>
@@ -82,6 +87,9 @@
       <DependentUpon>Settings.settings</DependentUpon>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
+    <Compile Include="SecondaryAddress.vb" />
+    <Compile Include="VariableDataStructure.vb" />
+    <Compile Include="WMBusMessage.vb" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="My Project\Resources.resx">
