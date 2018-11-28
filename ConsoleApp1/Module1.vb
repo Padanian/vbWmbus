@@ -412,10 +412,10 @@ Module Module1
             i = offset + 1
 
             decodeDib(buffer, i)
-            Dim dataField As Integer = buffer(i) And &HF
-            If dataField = 11 Or dataField = 66 Then dataField = 3
+            Dim dataField As Integer = buffer(i) And &HB1111
+            'If dataField = 11 Or dataField = 66 Then dataField = 3
             dataLength = dataField
-            storageNumber = (buffer(i) And &H40) >> 6
+            storageNumber = (buffer(i) And &B1000000) >> 6
 
             subunit = 0
             tariff = 0
@@ -1298,7 +1298,7 @@ salta:
     End Sub
     Private Sub decodeDib(ByVal buffer() As Byte, ByVal i As Integer)
 
-        Dim ff As Integer = ((buffer(i) And &H30) >> 4)
+        Dim ff As Integer = (buffer(i) And 48) >> 4
         Select Case ff
             Case 0
                 m_functionField = FunctionField.Valore_Istantaneo
