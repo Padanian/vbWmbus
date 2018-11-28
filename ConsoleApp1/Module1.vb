@@ -1,6 +1,9 @@
 ﻿Imports System.Runtime.CompilerServices
 Imports System.Text
 Imports Newtonsoft.Json
+Imports System.Runtime.Remoting.Metadata.W3cXsd2001
+Imports MaddalenaAmr
+
 
 Public Enum DataValueType
     _Long
@@ -15,6 +18,56 @@ Public Enum FunctionField
     Valore_Massimo
     Valore_Minimo
     Valore_Errore
+End Enum
+Public Enum TariffDescription
+    GENERAL = 0
+    COOLING_ENERGY = 1
+    TARIFF2 = 2
+    TARIFF3 = 3
+    TARIFF4 = 4
+
+End Enum
+Public Enum StorageIntervalDescription
+    YEARLY_STORAGE = 29
+    MONTHLY_STORAGE = 28
+    DAILY_STORAGE = 27
+    HOURLY_STORAGE = 26
+    MINUTELY_STORAGE = 25
+    SECONDLY_STORAGE = 24
+    GENERAL = 0
+End Enum
+Public Enum SubunitDescription
+    MAIN = 0
+    OBIS_B1 = 1
+    OBIS_B2 = 2
+    OBIS_B3 = 3
+    OBIS_B4 = 4
+    TARIFF_SUBUNIT = 5
+    MINIMUM_SUBUNIT = 6
+    MAXIMUM_SUBUNIT = 7
+    DATA_LOGGER = 8
+    EVENT_LOGGER = 9
+    TEST_MODE = 10
+    CALIBRATION_UNIT = 11
+    ADJUSTMENT_UNIT = 12
+    PULSE_COLLECTOR1 = 13
+    PULSE_COLLECTOR2 = 14
+    PULSE_COLLECTOR3 = 15
+    PULSE_COLLECTOR4 = 16
+    PULSE_COLLECTOR5 = 17
+    PULSE_COLLECTOR6 = 18
+    PULSE_COLLECTOR7 = 19
+    PULSE_COLLECTOR8 = 20
+    CONFIGURATION_MODE1 = 21
+    CONFIGURATION_MODE2 = 22
+    CONFIGURATION_MODE3 = 23
+    CONFIGURATION_MODE4 = 24
+    CONFIGURATION_MODE5 = 25
+    CONFIGURATION_MODE6 = 26
+    CONFIGURATION_MODE7 = 27
+    CONFIGURATION_MODE8 = 28
+    CONFIGURATION_MODE9 = 29
+
 End Enum
 Public Enum Description
     ENERGY
@@ -98,7 +151,7 @@ Public Enum Description
     TIME_POINT_DAY_CHANGE
     CUMULATION_COUNTER
     RESET_COUNTER
-
+    NONE = 255
 End Enum
 Public Enum DeviceType
     OTHER = &H0
@@ -295,184 +348,227 @@ Module Module1
     Private version As Integer
     Private deviceType As String
 
+    Public Const OFFSET_BYTE1 = 0
+    Public Const OFFSET_BYTE2 = 2
+    Public Const OFFSET_BYTE3 = 4
+    Public Const OFFSET_BYTE4 = 6
+
+
 
     Sub Main()
         '                           0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9
-        Dim telegramma As String = "5044243434398583000D7A8C0000202F2F046D262D5B2B0406000000008410060000000001FD1710041303000000043B00000000042B00000000025B1700025F18000261EDFF03FD0C05000002FD0B30110000000"
-        'Dim telegramma As String = "204472341111111101077A000010852F2F000102030405060708090A0B0C0D0E0F9976"
-        'Dim telegramma As String = "2E44B05C10000000021B7AC40820052F2F0A6699010AFB1A930202FD971D01002F2F2F2F2F2F2F2F2F2F2F2F2F879E0D0A"
-
-        '
+        'Dim telegramma As String = "2644C5148003602400077A912B00202F2F046D252A562B0413DF00000001FD17400478A1DBB90000"
+        'Dim telegramma As String = "2844C5148910504301167289105043C5140016D22B00202F2F046D19295C2B0413E800000001FD17580097FC"
+        'Dim telegramma As String = "5244C51445195824010D7A4F2000202F2F046D2B275C2B0406000000008410060000000001FD1700041501000000043B00000000042B00000000025F140004610300000084401410000000848040140000000000"
+        'Dim telegramma As String = "2844C5149310504301167210010000C51400162B2B00202F2F046D18295C2B0413F900000001FD1758005000"
+        Dim telegramma As String = "2B44C5144735902455087247359024C5145508560000002F2F0B6E000000426C3F2C4B6E00000002FD17000000DF21C6"
 
 
         Dim i As Integer = 0
         Dim buffer As Byte() = {}
         Dim j As Integer = 0
 
-        For j = 0 To telegramma.Length / 2 - 1
-            Array.Resize(buffer, buffer.Length + 1)
-            buffer(j) = Convert.ToInt16(Strings.Mid(telegramma, j * 2 + 1, 2), 16)
-        Next
+        'offset a seconda del tipo di telegramma
+        Dim frame_type = telegramma.Substring(20, 2)
+        Dim offset As Integer = 0
+        If frame_type = "72" Then
+            offset = 24
+        ElseIf frame_type = "7A" Then
+            offset = 16
+        End If
 
+        'Decodifica Preambolo
+        For j = 0 To telegramma.Length - 1 Step 2
+            Array.Resize(buffer, buffer.Length + 1)
+            buffer(j / 2) = Convert.ToInt16(Strings.Mid(telegramma, j + 1, 2), 16)
+        Next
         decodePreamble(buffer)
 
-        Dim offset = telegramma.IndexOf("2F2F") / 2 + 1 ' 16
+        'ricerca del marker AES (se non trovato = criptato)
+        Dim found1 As Boolean = InStr(telegramma, "2F2F")
 
+        'Decodifica il frame criptato
+        If Not found1 Then
+            telegramma = DecodeAES(telegramma)
+            offset = 1
+        End If
+        If telegramma = "" Then
+            Exit Sub
+        End If
 
+        ''ricerca del marker allarmi
+        'Dim alarm_pointer As Integer = telegramma.IndexOf("01fd17")
+        'Dim alarmfound As String = ""
+        'If alarm_pointer <> -1 Then
+        '    alarmfound = telegramma.Substring(alarm_pointer + 6, 2)
+        'End If
 
-        While i < telegramma.Length And i < buffer.Length - 5
+        'Se era criptato, ricrea il buffer questa volta decriptato
+        For j = 0 To telegramma.Length - 1 Step 2
+            buffer(j / 2) = Convert.ToInt16(Strings.Mid(telegramma, j + 1, 2), 16)
+        Next
+
+        While buffer.Length - i >= 3
             i = offset + 1
 
-                decodeDib(buffer, i)
-                Dim dataField As Integer = buffer(i) And &HF
-                dataLength = dataField
-                storageNumber = (buffer(i) And &H40) \ 2 ^ 6
+            decodeDib(buffer, i)
+            Dim dataField As Integer = buffer(i) And &HF
+            If dataField = 11 Or dataField = 66 Then dataField = 3
+            dataLength = dataField
+            storageNumber = (buffer(i) And &H40) >> 6
 
-                subunit = 0
-                tariff = 0
-                Dim numDife As Integer = 0
+            subunit = 0
+            tariff = 0
+            Dim numDife As Integer = 0
 
-
-                While ((buffer(i + 1) And 128) = 128)
-                    i += 1
-                    subunit = subunit + (((buffer(i) And &H40) \ 2 ^ 6) * 2 ^ numDife)
-                    tariff = tariff + ((buffer(i) And &H30) \ 2 ^ 4) * 2 ^ (numDife * 2)
-                    storageNumber = storageNumber + ((buffer(i) And 15) * 2 ^ ((numDife * 4) + 1))
-                    numDife = (numDife + 1)
-
-                End While
-
-                unit = 0
-                multiplierExponent = 0
-
-                dib = CopyofRange(buffer, offset + 1, i + 1)
+            Dim alarmcode As Byte
+            If buffer(i + 1) = &HFD And buffer(i + 2) = &H23 Then
+                i = i + 3
+                subunit = subunit + (((buffer(i) And &H40) \ 2 ^ 6) * 2 ^ numDife)
+                tariff = tariff + ((buffer(i) And &H30) \ 2 ^ 4) * 2 ^ (numDife * 2)
+                storageNumber = storageNumber + ((buffer(i) And 15) * 2 ^ ((numDife * 4) + 1))
+                numDife = (numDife + 1)
+            End If
+            If buffer(i + 1) = &HFD And buffer(i + 2) = &H17 Then
+                alarmcode = buffer(i)
+            End If
 
 
-                i = i + 1
-                Dim vif As Integer = (buffer(i) And 255)
-                Dim decodeFurtherVifs As Boolean = False
+            unit = 0
+            multiplierExponent = 0
 
-                If (vif = 251) Then
-                    decodeAlternateExtendedVif(buffer(i))
-                    If ((buffer(i) And 128) = 128) Then
-                        decodeFurtherVifs = True
-                    End If
+            dib = CopyofRange(buffer, offset + 1, i + 1) 'offset,i
 
-                    i += 1 'verificare
-                ElseIf ((vif And 127) = 124) Then
-                    i = (i + decodeUserDefinedVif(buffer, i))
-                    If ((vif And 128) = 128) Then
-                        decodeFurtherVifs = True
-                    End If
 
-                ElseIf (vif = 253) Then
-                    decodeMainExtendedVif(buffer(i))
-                    If ((buffer(i) And 128) = 128) Then
-                        decodeFurtherVifs = True
-                    End If
+            i = i + 1
+            Dim vif As Integer = buffer(i)
+            Dim decodeFurtherVifs As Boolean = False
 
-                    i += 1 'verificare
-                Else
-                    decodeMainVif(vif)
-                    If ((vif And 128) = 128) Then
-                        decodeFurtherVifs = True
-                    End If
-
+            If (vif = 251) Then
+                decodeAlternateExtendedVif(buffer(i))
+                If ((buffer(i) And 128) = 128) Then
+                    decodeFurtherVifs = True
                 End If
-                vib = CopyofRange(buffer, offset + dib.Length + 1, i + 1)
 
-                Select Case (dataField)
-                    Case 0, 8
-                        dataValue = Nothing
+                i += 1
+            ElseIf ((vif And 127) = 124) Then
+                i = (i + decodeUserDefinedVif(buffer, i))
+                If ((vif And 128) = 128) Then
+                    decodeFurtherVifs = True
+                End If
+
+            ElseIf (vif = 253) Then
+                decodeMainExtendedVif(buffer(i))
+                If ((buffer(i) And 128) = 128) Then
+                    decodeFurtherVifs = True
+                End If
+
+                i += 1
+            Else
+                decodeMainVif(vif)
+                If ((vif And 128) = 128) Then
+                    decodeFurtherVifs = True
+                End If
+
+            End If
+            vib = CopyofRange(buffer, offset + dib.Length + 1, i + 1)
+
+            Select Case (dataField)
+                Case 0, 8
+                    dataValue = Nothing
                         m_dataValueType = DataValueType.General
-                    Case 1
-                        dataValue = CLng(buffer(i = i + 1))
-                        m_dataValueType = DataValueType._Long
-                    Case 2
-                        If dateTypeG Then
-                            Dim day As Integer = (31 And buffer(i))
-                            i = i + 1
-                            Dim year1 As Integer = ((224 And buffer(i)) \ 2 ^ 5)
-                            Dim month As Integer = (15 And buffer(i))
-                            i = i + 1
-                            Dim year2 As Integer = ((240 And buffer(i)) \ 2 ^ 1)
-                            Dim year As Integer = (2000 + (year1 + year2))
-                            Dim calendar As DateTime = New DateTime(year, (month - 1), day, 0, 0, 0)
-                            dataValue = calendar.TimeOfDay
-                            m_dataValueType = DataValueType._Date
-                        Else
-                            i = i + 1
-                            dataValue = CLng(((buffer(i) And 255) Or ((buffer(i + 1) And 255) * 256)))
-                            If dataValue > 32768 Then
-                                dataValue = dataValue - 65535
-                            End If
-                            i = i + 1
-                            m_dataValueType = DataValueType._Long
+                Case 1
+                    i = i + 1
+                    dataValue = CLng(buffer(i))
+                    m_dataValueType = DataValueType._Long
+
+                Case 2
+                    If dateTypeG Then
+                        Dim day As Integer = (31 And buffer(i))
+                        Dim year1 As Integer = ((224 And buffer(i)) \ 2 ^ 5)
+                        i = i + 1
+                        Dim month As Integer = (15 And buffer(i))
+                        If month = 15 Then month = DateTime.Now.Month
+                        Dim year2 As Integer = ((240 And buffer(i)) \ 2 ^ 1)
+                        i = i + 1
+                        Dim year As Integer = (2000 + (year1 + year2))
+                        Dim calendar As DateTime = New DateTime(year, (month - 1), day, 0, 0, 0)
+                        dataValue = calendar.TimeOfDay
+                        m_dataValueType = DataValueType._Date
+                    Else
+                        dataValue = CLng(buffer(i) Or buffer(i + 1) * 256)
+                        If dataValue > 32768 Then
+                            dataValue = dataValue - 65535
                         End If
+                        i = i + 2
+                        m_dataValueType = DataValueType._Long
+                    End If
 
                     Case 3
                         If ((buffer((i + 2)) And 128) = 128) Then
-                            ' negative
-                            dataValue = CLng((buffer(i + 1) And 255) Or
-                        ((buffer(i + 2) And 255) * 256) Or
-                        ((buffer(i + 3) And 255) * 65536) Or 255 * 2 ^ 24)
-                            i = i + 3
+                        ' negative
+                        dataValue = CLng((buffer(i) And 255) Or
+                        ((buffer(i + 1) And 255) * 256) Or
+                        ((buffer(i + 2) And 255) * 65536) Or 255 * 2 ^ 24)
+                        i = i + 3
                         Else
-                            dataValue = CLng(((buffer(i + 1) And 255) Or
-                        (((buffer(i + 2) And 255) * 256) Or
-                        ((buffer(i + 3) And 255) * 65536))))
-                            i = i + 3
+                        dataValue = CLng(buffer(i + 1) Or
+                        (buffer(i + 2) << 8) Or
+                        (buffer(i + 3) << 256))
+                        i = i + 3
                         End If
 
                         m_dataValueType = DataValueType._Long
                     Case 4
-                        If dateTypeF Then
-                            i = i + 1
-                            Dim min As Integer = (buffer(i) And 63)
-                            Dim hour As Integer = (buffer(i) And 31)
-                            i = i + 1
-                            Dim yearh As Integer = ((96 And buffer(i)) \ 2 ^ 5)
-                            Dim day As Integer = (buffer(i) And 31)
-                            i = i + 1
-                            Dim year1 As Integer = ((224 And buffer(i)) \ 2 ^ 5)
-                            Dim mon As Integer = (buffer(i) And 15)
-                            i = i + 1
-                            Dim year2 As Integer = ((240 And buffer(i)) \ 2 ^ 1)
-                            If (yearh = 0) Then
-                                yearh = 1
-                            End If
-                            If mon = 0 Then mon = 1
-                            If day = 0 Then day = 1
+                    If dateTypeF Then
+                        i = i + 1
+                        Dim min As Integer = (buffer(i) And 63)
+                        Dim hour As Integer = (buffer(i) And 31)
+                        i = i + 1
+                        Dim yearh As Integer = ((96 And buffer(i)) >> 5)
+                        Dim day As Integer = (buffer(i) And 31)
+                        i = i + 1
+                        Dim year1 As Integer = ((224 And buffer(i)) >> 5)
+                        Dim mon As Integer = (buffer(i) And 15)
+                        i = i + 1
+                        Dim year2 As Integer = ((240 And buffer(i)) >> 1)
 
-                            Dim year As Integer = 1900 + 100 * yearh + year1 + year2
-                            calendar = New DateTime(year, mon - 1, day, hour, min, 0)
-                            dataValue = calendar.TimeOfDay
-                            m_dataValueType = DataValueType._Date
-                        Else
-                            i = i + 1
-                            dataValue = CLng((buffer(i) And 255) Or
-                        ((buffer(i + 1) And 255) * 256) Or
-                        ((buffer(i + 2) And 255) * 65536) Or ((buffer(i + 3) And 255) * 2 ^ 24))
-                            i = i + 3
-                            m_dataValueType = DataValueType._Long
+                        If (yearh = 0) Then
+                            yearh = 1
                         End If
+                        If mon = 0 Then mon = 1
+                        If day = 0 Then day = 1
+                        If hour > 23 Then hour = 0
 
-                    Case 5
-                'Dim doubleDatavalue As Double = ByteBuffer.wrap(buffer, i, 4).order(ByteOrder.LITTLE_ENDIAN).getFloat
-                'i = (i + 4)
-                'dataValue = CDbl(doubleDatavalue)
-                'm_dataValueType = DataValueType._DOUBLE
-                    Case 6
+                        Dim year As Integer = 1900 + 100 * yearh + year1 + year2
+                        calendar = New DateTime(year, mon - 1, day, hour, min, 0)
+                        dataValue = calendar.TimeOfDay
+                        m_dataValueType = DataValueType._Date
+                    Else
+                        i = i + 1
+                        dataValue = CLng(buffer(i) Or
+                        (CLng(buffer(i + 1)) << 8) Or
+                        (CLng(buffer(i + 2)) << 16) Or (CLng(buffer(i + 3)) << 24))
+                        i = i + 3
+                        m_dataValueType = DataValueType._Long
+                    End If
+
+                Case 5
+                    Dim bytebuffer As Byte() = CopyofRange(buffer, i, i + 4)
+                    Dim doubleDatavalue As Double = BitConverter.ToSingle(bytebuffer, 0)
+                    i = i + 4
+                    dataValue = CDbl(doubleDatavalue)
+                    m_dataValueType = DataValueType._Double
+                Case 6
                         If ((buffer((i + 5)) And 128) = 128) Then
-                            ' negative
-                            i = i + 1
-                            dataValue = CLng((buffer(i) And 255) Or
+                        ' negative
+                        dataValue = CLng((buffer(i) And 255) Or
                         (((buffer(i + 1) And 255) * 256)) Or
                         (((buffer(i + 2) And 255) * 2 ^ 16)) Or
                         (((buffer(i + 3) And 255) * 2 ^ 24)) Or
                         (((CType(buffer(i + 4), Long) And 255) * 2 ^ 32)) Or
                         (((CType(buffer(i + 5), Long) And 255) * 2 ^ 40)) Or (255 * 2 ^ 48) Or (256 << 56))
-                            i = i + 5
+                        i = i + 6
                         Else
                             i = i + 1
                             dataValue = CLng(((buffer(i) And 255) Or
@@ -485,15 +581,17 @@ Module Module1
                         End If
 
                         m_dataValueType = DataValueType._Long
-                    Case 7
-                        dataValue = CLng(((buffer(i = i + 1) And 255) Or (((buffer(i = i + 1) And 255) + 8) _
-                                Or (((buffer(i = i + 1) And 255) + 16) _
-                                Or (((buffer(i = i + 1) And 255) + 24) _
-                                Or (((CType(buffer(i = i + 1), Long) And 255) + 32) _
-                                Or (((CType(buffer(i = i + 1), Long) And 255) + 40) _
-                                Or (((CType(buffer(i = i + 1), Long) And 255) + 48) _
-                                Or ((CType(buffer(i = i + 1), Long) And 255) + 56)))))))))
-                        m_dataValueType = DataValueType._Long
+                Case 7
+                    i = i + 1
+                    dataValue = CLng((buffer(i) Or ((buffer(i + 1) * 2 ^ 8) Or
+                                 ((buffer(i + 2) * 2 ^ 16) Or
+                                 ((buffer(i + 3) * 2 ^ 24) Or
+                                 ((CType(buffer(i + 4), Long) * 2 ^ 32) Or
+                                 ((CType(buffer(i + 5), Long) * 2 ^ 40) Or
+                                 ((CType(buffer(i + 6), Long) * 2 ^ 48) Or
+                                 (CType(buffer(i + 7), Long) << 56)))))))))
+                    i = i + 7
+                    m_dataValueType = DataValueType._Long
                     Case 9
                         i = setBCD(buffer, i, 1)
                     Case 10
@@ -541,80 +639,82 @@ Module Module1
                     dataValue = 0
                 End If
                 Dim DataX As String = ""
-                If IsNumeric(dataValue) Then
-                    DataX = Format(dataValue * 10 ^ multiplierExponent, "###0.##")
-                ElseIf TypeOf (dataValue) Is Byte() Then
-                    If dataValue.length = 1 Then
-                        Dim temp As Integer
-                        Integer.TryParse(Hex(dataValue(0)), temp)
-                        DataX = Format(temp * 10 ^ multiplierExponent, "###0.##")
-                    ElseIf dataValue.length = 2 Then
-                        Dim temp As Integer
-                        Integer.TryParse(Hex(dataValue(1)) & Hex(dataValue(0)), temp)
-                        DataX = Format(temp * 10 ^ multiplierExponent, "###0.##")
-                    ElseIf dataValue.length = 3 Then
-                        Dim temp As Integer
-                        Integer.TryParse(Hex(dataValue(2)) & Hex(dataValue(1)) & Hex(dataValue(0)), temp)
-                        DataX = Format(temp * 10 ^ multiplierExponent, "###0.##")
-                    ElseIf dataValue.length = 4 Then
-                        Dim temp As Integer
-                        Integer.TryParse(Hex(dataValue(3)) & Hex(dataValue(2)) & Hex(dataValue(1)) & Hex(dataValue(0)), temp)
-                        DataX = Format(temp * 10 ^ multiplierExponent, "###0.##")
+            If IsNumeric(dataValue) Then
+                DataX = Format(dataValue * 10 ^ multiplierExponent, "###0.##")
+            ElseIf TypeOf (dataValue) Is Byte() Then
+                If dataValue.length = 1 Then
+                    Dim temp As Integer
+                    Integer.TryParse(Hex(dataValue(0)), temp)
+                    DataX = Format(temp * 10 ^ multiplierExponent, "###0.##")
+                ElseIf dataValue.length = 2 Then
+                    Dim temp As Integer
+                    Integer.TryParse(Hex(dataValue(1)) & Hex(dataValue(0)), temp)
+                    DataX = Format(temp * 10 ^ multiplierExponent, "###0.##")
+                ElseIf dataValue.length = 3 Then
+                    Dim temp As Integer
+                    Integer.TryParse(Hex(dataValue(2)) & Hex(dataValue(1)) & Hex(dataValue(0)), temp)
+                    DataX = Format(temp * 10 ^ multiplierExponent, "###0.##")
+                ElseIf dataValue.length = 4 Then
+                    Dim temp As Integer
+                    Integer.TryParse(Hex(dataValue(3)) & Hex(dataValue(2)) & Hex(dataValue(1)) & Hex(dataValue(0)), temp)
+                    DataX = Format(temp * 10 ^ multiplierExponent, "###0.##")
+                ElseIf dataValue.length = 6 Then
+                    Dim temp As Integer
+                    Integer.TryParse(Hex(dataValue(5)) & Hex(dataValue(4)) & Hex(dataValue(3)) & Hex(dataValue(2)) & Hex(dataValue(1)) & Hex(dataValue(0)), temp)
+                    DataX = Format(temp * 10 ^ multiplierExponent, "###0.##")
 
-                    End If
-                Else
-                    DataX = dataValue.ToString
                 End If
-                If TypeOf (dataValue) Is TimeSpan Then
-                    DataX = calendar.ToString
-                End If
+            Else
+                DataX = dataValue.ToString
+            End If
+            If TypeOf (dataValue) Is TimeSpan Then
+                DataX = calendar.ToString
+            End If
 
-                dateTypeF = False
-                dateTypeG = False
-
-                Dim aggiungi As Integer
-                If TypeOf (dataValue) Is Byte() Then
-                    aggiungi = dataValue.length
-                Else
-                    aggiungi = dataField
-                End If
-
-                offset = offset + dib.Length + vib.Length + aggiungi
+            dateTypeF = False
+            dateTypeG = False
 
 
-                Array.Resize(DecodedData.DecodedDataField, DecodedData.DecodedDataField.Length + 1)
-                DecodedData.DecodedDataField(DecodedData.DecodedDataField.Length - 1).calendar = calendar
-                DecodedData.DecodedDataField(DecodedData.DecodedDataField.Length - 1).datavalue = dataValue
-                DecodedData.DecodedDataField(DecodedData.DecodedDataField.Length - 1).multiplierexponent = multiplierExponent
-                DecodedData.DecodedDataField(DecodedData.DecodedDataField.Length - 1).m_datavaluetype = m_dataValueType
-                DecodedData.DecodedDataField(DecodedData.DecodedDataField.Length - 1).m_description = m_description
-                DecodedData.DecodedDataField(DecodedData.DecodedDataField.Length - 1).m_functionField = m_functionField
-                DecodedData.DecodedDataField(DecodedData.DecodedDataField.Length - 1).storagenumber = storageNumber
-                DecodedData.DecodedDataField(DecodedData.DecodedDataField.Length - 1).subunit = subunit
-                DecodedData.DecodedDataField(DecodedData.DecodedDataField.Length - 1).tariff = tariff
-                DecodedData.DecodedDataField(DecodedData.DecodedDataField.Length - 1).unit = unit
-                DecodedData.manufacturerId = manufacturerId
-                DecodedData.manufacturerDetails = manufacturerDetails
-                DecodedData.deviceId = deviceId
-                DecodedData.version = version
-                DecodedData.deviceType = deviceType
+            offset = offset + dib.Length + vib.Length + dataField
 
-                calendar = New DateTime
-                dataValue = ""
-                multiplierExponent = 0
-                m_dataValueType = 0
-                m_description = 0
-                m_functionField = 0
-                storageNumber = 0
-                subunit = 0
-                tariff = 0
-            End While
+
+            Array.Resize(DecodedData.DecodedDataField, DecodedData.DecodedDataField.Length + 1)
+            DecodedData.manufacturerId = manufacturerId
+            DecodedData.manufacturerDetails = manufacturerDetails
+            DecodedData.deviceId = deviceId
+            DecodedData.version = version
+            DecodedData.deviceType = deviceType
+
+            DecodedData.DecodedDataField(DecodedData.DecodedDataField.Length - 1).calendar = calendar
+            DecodedData.DecodedDataField(DecodedData.DecodedDataField.Length - 1).datavalue = dataValue
+            DecodedData.DecodedDataField(DecodedData.DecodedDataField.Length - 1).datavalueSimplified = DataX
+            DecodedData.DecodedDataField(DecodedData.DecodedDataField.Length - 1).multiplierexponent = multiplierExponent
+            DecodedData.DecodedDataField(DecodedData.DecodedDataField.Length - 1).m_datavaluetype = [Enum].GetName(GetType(DataValueType), m_dataValueType)
+            DecodedData.DecodedDataField(DecodedData.DecodedDataField.Length - 1).m_description = [Enum].GetName(GetType(Description), m_description)
+            DecodedData.DecodedDataField(DecodedData.DecodedDataField.Length - 1).m_functionField = [Enum].GetName(GetType(FunctionField), m_functionField)
+            DecodedData.DecodedDataField(DecodedData.DecodedDataField.Length - 1).storagenumber = [Enum].GetName(GetType(StorageIntervalDescription), storageNumber)
+            DecodedData.DecodedDataField(DecodedData.DecodedDataField.Length - 1).subunit = [Enum].GetName(GetType(SubunitDescription), subunit)
+            DecodedData.DecodedDataField(DecodedData.DecodedDataField.Length - 1).tariff = [Enum].GetName(GetType(TariffDescription), tariff)
+            DecodedData.DecodedDataField(DecodedData.DecodedDataField.Length - 1).unitDescription = [Enum].GetName(GetType(DlmsUnit), unit)
+            DecodedData.DecodedDataField(DecodedData.DecodedDataField.Length - 1).unitSymbol = getUnit(unit)
+
+            calendar = New DateTime
+            dataValue = ""
+            multiplierExponent = 0
+            m_dataValueType = 0
+            m_description = 0
+            m_functionField = 0
+            storageNumber = 0
+            subunit = 0
+            tariff = 0
+            unit = 0
+        End While
 
 
 salta:
         Dim json As String = JsonConvert.SerializeObject(DecodedData)
         Console.WriteLine(json)
-        Console.ReadKey()
+
 
     End Sub
     Private Sub decodePreamble(ByVal buffer As Byte())
@@ -855,6 +955,9 @@ salta:
         ElseIf ((vif And 127) = 118) Then
             ' E111 0110
             m_description = Description.MANUFACTURER_SPECIFIC
+        ElseIf ((vif And 127) = 125) Then
+            ' 
+            m_description = Description.ERROR_MASK
         ElseIf ((vif And 127) >= 119) Then
             ' E111 0111 - E111 1111
             m_description = Description.RESERVED
@@ -1195,7 +1298,7 @@ salta:
     End Sub
     Private Sub decodeDib(ByVal buffer() As Byte, ByVal i As Integer)
 
-        Dim ff As Integer = ((buffer(i) And &H30) \ 2 ^ 4)
+        Dim ff As Integer = ((buffer(i) And &H30) >> 4)
         Select Case ff
             Case 0
                 m_functionField = FunctionField.Valore_Istantaneo
@@ -1704,6 +1807,99 @@ salta:
 
         Return value
     End Function
+    Private Function DecodeAES(frame As String) As String
+
+        '                          0                           1             2            3          4
+        '                          1234 5678                  90123456   78 90 12 34 567890 1234567890
+        ' Dim frame_d As String = "8E44 C514                  36599021   00 07 7A 34 0B8005 E90C5A2416BF072DC29AEDB12C04381A273B3A20F8F8B2945E959BB4A129161B998066F047E64CE6F8BAFDEF35125EF437F261F8CD04A7A0077213C7FBE453EABED82A2298964AAD52F420333D43F89F4DC5E4AB7D8C427D8E166ABBE36D00EACF8BBA5ACDB3064A6D8324F9E076B41846D8E052B18DB3E04FB24AC0777B3BA0"
+
+        '                          0          1          2           3             4           5
+        '                          1234 5678 90123456 7890 12 34567890 1234 56 78 90 123456 7890
+        ' Dim frame As String = "  9644 C514 84058042 0107 72 21436587 C514 00 07 6D 0B8005 6BEAEC791CB1E911D3442070F2EE1961B7E3D8917683E53C2045CF57AFF24DCB5F8DE5550299EF614DFD74F210D72AE6CC4728C31F2A0E0D25CF1C69F57DD57420CCCF42299BBEEA1528A9F21E70F68024CC3FD4C37DA62C4EA0FDFCB91C73EB1A933D59C5599EC7A6B3718128A0A572C3D61C4567323AEB79497349A191B66F5A00ECE0530D32"
+        ' Dim aesBlock As String = "  6BEAEC791CB1E911D3442070F2EE1961B7E3D8917683E53C2045CF57AFF24DCB5F8DE5550299EF614DFD74F210D72AE6CC4728C31F2A0E0D25CF1C69F57DD57420CCCF42299BBEEA1528A9F21E70F68024CC3FD4C37DA62C4EA0FDFCB91C73EB1A933D59C5599EC7A6B3718128A0A572C3D61C4567323AEB79497349A191B66F"
+        ' Dim should_be As String = "2f2f426c000044130000000001fd170884011300000000c401130000000084021300000000c402130000000084031300000000c403130000000084041300000000c404130000000084051300000000c405130000000084061300000000c406130000000084071300000000c4071300000000840813000000002f2f2f2f2f2f2f"
+
+        Dim frame_type As String = ""
+
+        Dim aesBlock As String = ""
+        Dim address As String = ""
+        Dim manuf As String = ""
+        Dim accessNumber As String = ""
+        Dim medium As String = ""
+        Dim version As String = ""
+        Dim status As String = ""
+        Dim x, y As String
+        Dim b1, b2, b3, b4 As String
+        Dim s() As Byte
+        Dim result As Byte()
+
+        x = ""
+        y = ""
+
+        ' frame = "9644C5149410504301077294105043C5140007170B8105750831D30960315F4B7B158BD8D553C6A355B3049AE1611A99418DD54E0AA3BD91318059F439946AFCE30D14F8397B97407BC8D66075D4DC340844B0CCAC738FB8D27B6C0471C6723D1EDBB47D6E51077FFF7A2F41F2CB23CC86E957AF913DA21FA596E491D06409700D90FABEE06404700575D954800375D95590FABEE00402"
+        ' decodificato diventa "2f2f426cdf1c44130000000001fd174884011301000000c401130100000084021301000000c402130000000084031300000000c403130000000084041300000000c404130000000084051300000000c405130000000084061300000000c406131efa43d3c7705b8b5ad1d64691064a79665083feff7d5111195a2c2c3bb45746"
+        If frame <> "" Then
+            frame_type = Mid(frame, 21, 2)
+            Select Case frame_type
+                Case "7A"
+                    b1 = Mid(frame, 9 + OFFSET_BYTE1, 2)
+                    b2 = Mid(frame, 9 + OFFSET_BYTE2, 2)
+                    b3 = Mid(frame, 9 + OFFSET_BYTE3, 2)
+                    b4 = Mid(frame, 9 + OFFSET_BYTE4, 2)
+                    address = b4 & b3 & b2 & b1
+                    manuf = Mid(frame, 5, 4)
+                    accessNumber = Mid(frame, 23, 2)
+                    medium = Mid(frame, 19, 2)
+                    version = Mid(frame, 17, 2)
+                    status = Mid(frame, 25, 2)
+
+                    s = SoapHexBinary.Parse(status).Value
+                    If CBool(s(0) And &H20) = True Then     ' Check bit 5 status
+                        aesBlock = Strings.Mid(frame, 31, 256)      ' 1 = Frame compatta
+                    Else
+                        aesBlock = Strings.Mid(frame, 31, 256)      ' 0 = Frame lunga
+                    End If
+
+                Case "72"
+                    b1 = Mid(frame, 23 + OFFSET_BYTE1, 2)
+                    b2 = Mid(frame, 23 + OFFSET_BYTE2, 2)
+                    b3 = Mid(frame, 23 + OFFSET_BYTE3, 2)
+                    b4 = Mid(frame, 23 + OFFSET_BYTE4, 2)
+                    address = b4 & b3 & b2 & b1
+                    manuf = Mid(frame, 31, 4)
+                    accessNumber = Mid(frame, 39, 2)
+                    medium = Mid(frame, 37, 2)
+                    version = Mid(frame, 35, 2)
+                    status = Mid(frame, 41, 2)
+
+                    s = SoapHexBinary.Parse(status).Value
+                    If CBool(s(0) And &H20) = True Then     ' Check bit 5 status
+                        aesBlock = Mid(frame, 47, 256)      ' 1 = Frame compatta
+                    Else
+                        aesBlock = Mid(frame, 47, 256)      ' 0 = Frame lunga
+                    End If
+                Case Else
+                    Return ""
+            End Select
+            Try
+                result = WMBUSDecrypt.decryptBlock(SoapHexBinary.Parse(address).Value, SoapHexBinary.Parse(manuf).Value, SoapHexBinary.Parse(version).Value(0), SoapHexBinary.Parse(medium).Value(0), SoapHexBinary.Parse(accessNumber).Value(0), SoapHexBinary.Parse(aesBlock).Value)
+
+                x = ""
+                y = result.Length
+
+                For m = 0 To y - 1
+                    x = x & Hex(result(m)).PadLeft(2, "0").ToLower.ToString
+                Next
+
+            Catch ex As Exception
+                MsgBox(ex.Message) ' "Errore di decodifica AES!!!"
+            End Try
+
+        End If
+
+        DecodeAES = x
+
+    End Function
 
 End Module
 Public Class DecodedDeviceClass
@@ -1722,20 +1918,17 @@ Public Class DecodedDeviceClass
     End Sub
 End Class
 Public Structure DecodedDataFields
-    Public m_description As Description
-    Public m_functionField As FunctionField
-    Public subunit As Long
-    Public tariff As Integer
-    Public storagenumber As Long
+    Public m_description As String
+    Public m_functionField As String
+    Public m_datavaluetype As String
+    Public subunit As String
+    Public tariff As String
+    Public storagenumber As String
     Public calendar As DateTime
     Public datavalue As Object
-    Public m_datavaluetype As DataValueType
-    Public unit As DlmsUnit
-    Public ReadOnly Property unitSymbol As String
-        Get
-            Return getUnit(Me.unit)
-        End Get
-    End Property
+    Public datavalueSimplified As String
+    Public unitDescription As String
+    Public unitSymbol As String
     Public Property multiplierexponent As Integer
 End Structure
 
