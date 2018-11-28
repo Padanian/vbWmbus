@@ -1,324 +1,324 @@
 ﻿Imports System.Text
 Imports Newtonsoft.Json
 Imports System.Runtime.Remoting.Metadata.W3cXsd2001
+Imports MaddalenaAmr
 
+Public Class vbWmbus
 
-Public Enum DataValueType
-    _Long
-    _Double
-    _Date
-    _String
-    BCD
-    General
-End Enum
-Public Enum FunctionField
-    Valore_Istantaneo
-    Valore_Massimo
-    Valore_Minimo
-    Valore_Errore
-End Enum
-Public Enum TariffDescription
-    GENERAL = 0
-    COOLING_ENERGY = 1
-    TARIFF2 = 2
-    TARIFF3 = 3
-    TARIFF4 = 4
+    Public Enum DataValueType
+        _Long
+        _Double
+        _Date
+        _String
+        BCD
+        General
+    End Enum
+    Public Enum FunctionField
+        Valore_Istantaneo
+        Valore_Massimo
+        Valore_Minimo
+        Valore_Errore
+    End Enum
+    Public Enum TariffDescription
+        GENERAL = 0
+        COOLING_ENERGY = 1
+        TARIFF2 = 2
+        TARIFF3 = 3
+        TARIFF4 = 4
 
-End Enum
-Public Enum StorageIntervalDescription
-    YEARLY_STORAGE = 29
-    MONTHLY_STORAGE = 28
-    DAILY_STORAGE = 27
-    HOURLY_STORAGE = 26
-    MINUTELY_STORAGE = 25
-    SECONDLY_STORAGE = 24
-    GENERAL = 0
-End Enum
-Public Enum SubunitDescription
-    MAIN = 0
-    OBIS_B1 = 1
-    OBIS_B2 = 2
-    OBIS_B3 = 3
-    OBIS_B4 = 4
-    TARIFF_SUBUNIT = 5
-    MINIMUM_SUBUNIT = 6
-    MAXIMUM_SUBUNIT = 7
-    DATA_LOGGER = 8
-    EVENT_LOGGER = 9
-    TEST_MODE = 10
-    CALIBRATION_UNIT = 11
-    ADJUSTMENT_UNIT = 12
-    PULSE_COLLECTOR1 = 13
-    PULSE_COLLECTOR2 = 14
-    PULSE_COLLECTOR3 = 15
-    PULSE_COLLECTOR4 = 16
-    PULSE_COLLECTOR5 = 17
-    PULSE_COLLECTOR6 = 18
-    PULSE_COLLECTOR7 = 19
-    PULSE_COLLECTOR8 = 20
-    CONFIGURATION_MODE1 = 21
-    CONFIGURATION_MODE2 = 22
-    CONFIGURATION_MODE3 = 23
-    CONFIGURATION_MODE4 = 24
-    CONFIGURATION_MODE5 = 25
-    CONFIGURATION_MODE6 = 26
-    CONFIGURATION_MODE7 = 27
-    CONFIGURATION_MODE8 = 28
-    CONFIGURATION_MODE9 = 29
+    End Enum
+    Public Enum StorageIntervalDescription
+        YEARLY_STORAGE = 29
+        MONTHLY_STORAGE = 28
+        DAILY_STORAGE = 27
+        HOURLY_STORAGE = 26
+        MINUTELY_STORAGE = 25
+        SECONDLY_STORAGE = 24
+        GENERAL = 0
+    End Enum
+    Public Enum SubunitDescription
+        MAIN = 0
+        OBIS_B1 = 1
+        OBIS_B2 = 2
+        OBIS_B3 = 3
+        OBIS_B4 = 4
+        TARIFF_SUBUNIT = 5
+        MINIMUM_SUBUNIT = 6
+        MAXIMUM_SUBUNIT = 7
+        DATA_LOGGER = 8
+        EVENT_LOGGER = 9
+        TEST_MODE = 10
+        CALIBRATION_UNIT = 11
+        ADJUSTMENT_UNIT = 12
+        PULSE_COLLECTOR1 = 13
+        PULSE_COLLECTOR2 = 14
+        PULSE_COLLECTOR3 = 15
+        PULSE_COLLECTOR4 = 16
+        PULSE_COLLECTOR5 = 17
+        PULSE_COLLECTOR6 = 18
+        PULSE_COLLECTOR7 = 19
+        PULSE_COLLECTOR8 = 20
+        CONFIGURATION_MODE1 = 21
+        CONFIGURATION_MODE2 = 22
+        CONFIGURATION_MODE3 = 23
+        CONFIGURATION_MODE4 = 24
+        CONFIGURATION_MODE5 = 25
+        CONFIGURATION_MODE6 = 26
+        CONFIGURATION_MODE7 = 27
+        CONFIGURATION_MODE8 = 28
+        CONFIGURATION_MODE9 = 29
 
-End Enum
-Public Enum Description
-    ENERGY
-    VOLUME
-    MASS
-    ON_TIME
-    OPERATING_TIME
-    POWER
-    VOLUME_FLOW
-    VOLUME_FLOW_EXT
-    MASS_FLOW
-    FLOW_TEMPERATURE
-    RETURN_TEMPERATURE
-    TEMPERATURE_DIFFERENCE
-    EXTERNAL_TEMPERATURE
-    PRESSURE
-    DDATE
-    DATE_TIME
-    VOLTAGE
-    CURRENT
-    AVERAGING_DURATION
-    ACTUALITY_DURATION
-    FABRICATION_NO
-    MODEL_VERSION
-    PARAMETER_SET_ID
-    HARDWARE_VERSION
-    FIRMWARE_VERSION
-    ERROR_FLAGS
-    CUSTOMER
-    RESERVED
-    OPERATING_TIME_BATTERY
-    RF_LEVEL
-    HCA
-    REACTIVE_ENERGY
-    TEMPERATURE_LIMIT
-    MAX_POWER
-    REACTIVE_POWER
-    REL_HUMIDITY
-    FREQUENCY
-    PHASE
-    EXTENDED_IDENTIFICATION
-    ADDRESS
-    NOT_SUPPORTED
-    MANUFACTURER_SPECIFIC
-    FUTURE_VALUE
-    USER_DEFINED
-    APPARENT_ENERGY
-    CUSTOMER_LOCATION
-    ACCESS_CODE_OPERATOR
-    ACCESS_CODE_USER
-    PASSWORD
-    ACCESS_CODE_SYSTEM_DEVELOPER
-    OTHER_SOFTWARE_VERSION
-    ACCESS_CODE_SYSTEM_OPERATOR
-    ERROR_MASK
-    SECURITY_KEY
-    DIGITAL_INPUT
-    BAUDRATE
-    DIGITAL_OUTPUT
-    RESPONSE_DELAY_TIME
-    RETRY
-    FIRST_STORAGE_NUMBER_CYCLIC
-    REMOTE_CONTROL
-    LAST_STORAGE_NUMBER_CYCLIC
-    SIZE_STORAGE_BLOCK
-    STORAGE_INTERVALL
-    TARIF_START
-    DURATION_LAST_READOUT
-    TIME_POINT
-    TARIF_DURATION
-    OPERATOR_SPECIFIC_DATA
-    TARIF_PERIOD
-    NUMBER_STOPS
-    LAST_CUMULATION_DURATION
-    SPECIAL_SUPPLIER_INFORMATION
-    PARAMETER_ACTIVATION_STATE
-    CONTROL_SIGNAL
-    WEEK_NUMBER
-    DAY_OF_WEEK
-    REMAINING_BATTERY_LIFE_TIME
-    TIME_POINT_DAY_CHANGE
-    CUMULATION_COUNTER
-    RESET_COUNTER
-    NONE = 255
-End Enum
-Public Enum DeviceType
-    OTHER = &H0
-    OIL_METER = &H1
-    ELECTRICITY_METER = &H2
-    GAS_METER = &H3
-    HEAT_METER = &H4
-    STEAM_METER = &H5
-    WARM_WATER_METER = &H6
-    WATER_METER = &H7
-    HEAT_COST_ALLOCATOR = &H8
-    COMPRESSED_AIR = &H9
-    COOLING_METER_OUTLET = &HA
-    COOLING_METER_INLET = &HB
-    HEAT_METER_INLET = &HC
-    HEAT_COOLING_METER = &HD
-    BUS_SYSTEM_COMPONENT = &HE
-    UNKNOWN = &HF
-    RESERVED_FOR_METER_16 = &H10
-    RESERVED_FOR_METER_17 = &H11
-    RESERVED_FOR_METER_18 = &H12
-    RESERVED_FOR_METER_19 = &H13
-    CALORIFIC_VALUE = &H14
-    HOT_WATER_METER = &H15
-    COLD_WATER_METER = &H16
-    DUAL_REGISTER_WATER_METER = &H17
-    PRESSURE_METER = &H18
-    AD_CONVERTER = &H19
-    SMOKE_DETECTOR = &H1A
-    ROOM_SENSOR_TEMP_HUM = &H1B
-    GAS_DETECTOR = &H1C
-    RESERVED_FOR_SENSOR_H1D = &H1D
-    RESERVED_FOR_SENSOR_H1E = &H1E
-    RESERVED_FOR_SENSOR_H1F = &H1F
-    BREAKER_ELEC = &H20
-    VALVE_GAS_OR_WATER = &H21
-    RESERVED_FOR_SWITCHING_DEVICE_H22 = &H22
-    RESERVED_FOR_SWITCHING_DEVICE_H23 = &H23
-    RESERVED_FOR_SWITCHING_DEVICE_H24 = &H24
-    CUSTOMER_UNIT_DISPLAY_DEVICE = &H25
-    RESERVED_FOR_CUSTOMER_UNIT_H26 = &H26
-    RESERVED_FOR_CUSTOMER_UNIT_H27 = &H27
-    WASTE_WATER_METER = &H28
-    GARBAGE = &H29
-    RESERVED_FOR_CO2 = &H2A
-    RESERVED_FOR_ENV_METER_H2B = &H2B
-    RESERVED_FOR_ENV_METER_H2C = &H2C
-    RESERVED_FOR_ENV_METER_H2D = &H2D
-    RESERVED_FOR_ENV_METER_H2E = &H2E
-    RESERVED_FOR_ENV_METER_H2F = &H2F
-    RESERVED_FOR_SYSTEM_DEVICES_H30 = &H30
-    COM_CONTROLLER = &H31
-    UNIDIRECTION_REPEATER = &H32
-    BIDIRECTION_REPEATER = &H33
-    RESERVED_FOR_SYSTEM_DEVICES_H34 = &H34
-    RESERVED_FOR_SYSTEM_DEVICES_H35 = &H35
-    RADIO_CONVERTER_SYSTEM_SIDE = &H36
-    RADIO_CONVERTER_METER_SIDE = &H37
-    RESERVED_FOR_SYSTEM_DEVICES_H38 = &H38
-    RESERVED_FOR_SYSTEM_DEVICES_H39 = &H39
-    RESERVED_FOR_SYSTEM_DEVICES_H3A = &H3A
-    RESERVED_FOR_SYSTEM_DEVICES_H3B = &H3B
-    RESERVED_FOR_SYSTEM_DEVICES_H3C = &H3C
-    RESERVED_FOR_SYSTEM_DEVICES_H3D = &H3D
-    RESERVED_FOR_SYSTEM_DEVICES_H3E = &H3E
-    RESERVED_FOR_SYSTEM_DEVICES_H3F = &H3F
-    RESERVED = &HFF
-End Enum
-Public Enum DlmsUnit
+    End Enum
+    Public Enum Description
+        ENERGY
+        VOLUME
+        MASS
+        ON_TIME
+        OPERATING_TIME
+        POWER
+        VOLUME_FLOW
+        VOLUME_FLOW_EXT
+        MASS_FLOW
+        FLOW_TEMPERATURE
+        RETURN_TEMPERATURE
+        TEMPERATURE_DIFFERENCE
+        EXTERNAL_TEMPERATURE
+        PRESSURE
+        DDATE
+        DATE_TIME
+        VOLTAGE
+        CURRENT
+        AVERAGING_DURATION
+        ACTUALITY_DURATION
+        FABRICATION_NO
+        MODEL_VERSION
+        PARAMETER_SET_ID
+        HARDWARE_VERSION
+        FIRMWARE_VERSION
+        ERROR_FLAGS
+        CUSTOMER
+        RESERVED
+        OPERATING_TIME_BATTERY
+        RF_LEVEL
+        HCA
+        REACTIVE_ENERGY
+        TEMPERATURE_LIMIT
+        MAX_POWER
+        REACTIVE_POWER
+        REL_HUMIDITY
+        FREQUENCY
+        PHASE
+        EXTENDED_IDENTIFICATION
+        ADDRESS
+        NOT_SUPPORTED
+        MANUFACTURER_SPECIFIC
+        FUTURE_VALUE
+        USER_DEFINED
+        APPARENT_ENERGY
+        CUSTOMER_LOCATION
+        ACCESS_CODE_OPERATOR
+        ACCESS_CODE_USER
+        PASSWORD
+        ACCESS_CODE_SYSTEM_DEVELOPER
+        OTHER_SOFTWARE_VERSION
+        ACCESS_CODE_SYSTEM_OPERATOR
+        ERROR_MASK
+        SECURITY_KEY
+        DIGITAL_INPUT
+        BAUDRATE
+        DIGITAL_OUTPUT
+        RESPONSE_DELAY_TIME
+        RETRY
+        FIRST_STORAGE_NUMBER_CYCLIC
+        REMOTE_CONTROL
+        LAST_STORAGE_NUMBER_CYCLIC
+        SIZE_STORAGE_BLOCK
+        STORAGE_INTERVALL
+        TARIF_START
+        DURATION_LAST_READOUT
+        TIME_POINT
+        TARIF_DURATION
+        OPERATOR_SPECIFIC_DATA
+        TARIF_PERIOD
+        NUMBER_STOPS
+        LAST_CUMULATION_DURATION
+        SPECIAL_SUPPLIER_INFORMATION
+        PARAMETER_ACTIVATION_STATE
+        CONTROL_SIGNAL
+        WEEK_NUMBER
+        DAY_OF_WEEK
+        REMAINING_BATTERY_LIFE_TIME
+        TIME_POINT_DAY_CHANGE
+        CUMULATION_COUNTER
+        RESET_COUNTER
+        NONE = 255
+    End Enum
+    Public Enum DeviceType
+        OTHER = &H0
+        OIL_METER = &H1
+        ELECTRICITY_METER = &H2
+        GAS_METER = &H3
+        HEAT_METER = &H4
+        STEAM_METER = &H5
+        WARM_WATER_METER = &H6
+        WATER_METER = &H7
+        HEAT_COST_ALLOCATOR = &H8
+        COMPRESSED_AIR = &H9
+        COOLING_METER_OUTLET = &HA
+        COOLING_METER_INLET = &HB
+        HEAT_METER_INLET = &HC
+        HEAT_COOLING_METER = &HD
+        BUS_SYSTEM_COMPONENT = &HE
+        UNKNOWN = &HF
+        RESERVED_FOR_METER_16 = &H10
+        RESERVED_FOR_METER_17 = &H11
+        RESERVED_FOR_METER_18 = &H12
+        RESERVED_FOR_METER_19 = &H13
+        CALORIFIC_VALUE = &H14
+        HOT_WATER_METER = &H15
+        COLD_WATER_METER = &H16
+        DUAL_REGISTER_WATER_METER = &H17
+        PRESSURE_METER = &H18
+        AD_CONVERTER = &H19
+        SMOKE_DETECTOR = &H1A
+        ROOM_SENSOR_TEMP_HUM = &H1B
+        GAS_DETECTOR = &H1C
+        RESERVED_FOR_SENSOR_H1D = &H1D
+        RESERVED_FOR_SENSOR_H1E = &H1E
+        RESERVED_FOR_SENSOR_H1F = &H1F
+        BREAKER_ELEC = &H20
+        VALVE_GAS_OR_WATER = &H21
+        RESERVED_FOR_SWITCHING_DEVICE_H22 = &H22
+        RESERVED_FOR_SWITCHING_DEVICE_H23 = &H23
+        RESERVED_FOR_SWITCHING_DEVICE_H24 = &H24
+        CUSTOMER_UNIT_DISPLAY_DEVICE = &H25
+        RESERVED_FOR_CUSTOMER_UNIT_H26 = &H26
+        RESERVED_FOR_CUSTOMER_UNIT_H27 = &H27
+        WASTE_WATER_METER = &H28
+        GARBAGE = &H29
+        RESERVED_FOR_CO2 = &H2A
+        RESERVED_FOR_ENV_METER_H2B = &H2B
+        RESERVED_FOR_ENV_METER_H2C = &H2C
+        RESERVED_FOR_ENV_METER_H2D = &H2D
+        RESERVED_FOR_ENV_METER_H2E = &H2E
+        RESERVED_FOR_ENV_METER_H2F = &H2F
+        RESERVED_FOR_SYSTEM_DEVICES_H30 = &H30
+        COM_CONTROLLER = &H31
+        UNIDIRECTION_REPEATER = &H32
+        BIDIRECTION_REPEATER = &H33
+        RESERVED_FOR_SYSTEM_DEVICES_H34 = &H34
+        RESERVED_FOR_SYSTEM_DEVICES_H35 = &H35
+        RADIO_CONVERTER_SYSTEM_SIDE = &H36
+        RADIO_CONVERTER_METER_SIDE = &H37
+        RESERVED_FOR_SYSTEM_DEVICES_H38 = &H38
+        RESERVED_FOR_SYSTEM_DEVICES_H39 = &H39
+        RESERVED_FOR_SYSTEM_DEVICES_H3A = &H3A
+        RESERVED_FOR_SYSTEM_DEVICES_H3B = &H3B
+        RESERVED_FOR_SYSTEM_DEVICES_H3C = &H3C
+        RESERVED_FOR_SYSTEM_DEVICES_H3D = &H3D
+        RESERVED_FOR_SYSTEM_DEVICES_H3E = &H3E
+        RESERVED_FOR_SYSTEM_DEVICES_H3F = &H3F
+        RESERVED = &HFF
+    End Enum
+    Public Enum DlmsUnit
 
-    YEAR = 1 ''"a")'
-    MONTH = 2 ' "mo")'
-    WEEK = 3 ' "wk")'
-    DAY = 4 ' "d")'
-    HOUR = 5 ' "h")'
-    MIN = 6 ' "min")'
-    SECOND = 7 ' "s")'
-    DEGREE = 8 ' "°")'
-    DEGREE_CELSIUS = 9 ' "°C")'
-    CURRENCY = 10 ' "")'
-    METRE = 11 ' "m")'
-    METRE_PER_SECOND = 12 ' "m/s")'
-    CUBIC_METRE = 13 ' "m³")'
-    CUBIC_METRE_CORRECTED = 14 ' "m³")'
-    CUBIC_METRE_PER_HOUR = 15 ' "m³/h")'
-    CUBIC_METRE_PER_HOUR_CORRECTED = 16 ' "m³/h")'
-    CUBIC_METRE_PER_DAY = 17 ' "m³/d")'
-    CUBIC_METRE_PER_DAY_CORRECTED = 18 ' "m³/d")'
-    LITRE = 19 ' "l")'
-    KILOGRAM = 20 ' "kg")'
-    NEWTON = 21 ' "N")'
-    NEWTONMETER = 22 ' "Nm")'
-    PASCAL = 23 ' "Pa")'
-    BAR = 24 ' "bar")'
-    JOULE = 25 ' "J")'
-    JOULE_PER_HOUR = 26 ' "J/h")'
-    WATT = 27 ' "W")'
-    VOLT_AMPERE = 28 ' "VA")'
-    VAR = 29 ' "var")'
-    WATT_HOUR = 30 ' "Wh")'
-    VOLT_AMPERE_HOUR = 31 ' "VAh")'
-    VAR_HOUR = 32 ' "varh")'
-    AMPERE = 33 ' "A")'
-    COULOMB = 34 ' "C")'
-    VOLT = 35 ' "V")'
-    VOLT_PER_METRE = 36 ' "V/m")'
-    FARAD = 37 ' "F")'
-    OHM = 38 ' "Ohm")'
-    OHM_METRE = 39 ' "Ohm m²/m")'
-    WEBER = 40 ' "Wb")'
-    TESLA = 41 ' "T")'
-    AMPERE_PER_METRE = 42 ' "A/m")'
-    HENRY = 43 ' "H")'
-    HERTZ = 44 ' "Hz")'
-    ACTIVE_ENERGY_METER_CONSTANT_OR_PULSE_VALUE = 45 ' "1/=Wh)")'
-    REACTIVE_ENERGY_METER_CONSTANT_OR_PULSE_VALUE = 46 ' "1/=varh)")'
-    APPARENT_ENERGY_METER_CONSTANT_OR_PULSE_VALUE = 47 ' "1=VAh)")'
-    VOLT_SQUARED_HOURS = 48 ' "V²h")'
-    AMPERE_SQUARED_HOURS = 49 ' "A²h")'
-    KILOGRAM_PER_SECOND = 50 ' "kg/s")'
-    SIEMENS = 51 ' "S")'
-    KELVIN = 52 ' "K")'
-    VOLT_SQUARED_HOUR_METER_CONSTANT_OR_PULSE_VALUE = 53 ' "1/=V²h)")'
-    AMPERE_SQUARED_HOUR_METER_CONSTANT_OR_PULSE_VALUE = 54 ' "1/=A²h)")'
-    METER_CONSTANT_OR_PULSE_VALUE = 55 ' "1/m³")'
-    PERCENTAGE = 56 ' "%")'
-    AMPERE_HOUR = 57 ' "Ah")'
-    ENERGY_PER_VOLUME = 60 ' "Wh/m³")'
-    CALORIFIC_VALUE = 61 ' "J/m³")'
-    MOLE_PERCENT = 62 ' "Mol %")'
-    MASS_DENSITY = 63 ' "g/m³")'
-    PASCAL_SECOND = 64 ' "Pa s")'
-    SPECIFIC_ENERGY = 65 ' "J/kg")'
-    SIGNAL_STRENGTH = 70 ' "dBm")'
-    SIGNAL_STRENGTH_MICROVOLT = 71 ' "dBµv")'
-    LOGARITHMIC = 72 ' "dB")'
-    RESERVED = 253 ' "")'
-    OTHER_UNIT = 254 ' "other")'
-    COUNT = 255 ' "count")'
-    CUBIC_METRE_PER_SECOND = 150 ' "m³/s")'
-    CUBIC_METRE_PER_MINUTE = 151 ' "m³/min")'
-    KILOGRAM_PER_HOUR = 152 ' "kg/h")'
-    CUBIC_FEET = 153 ' "cft")'
-    US_GALLON = 154 ' "Impl. gal.")'
-    US_GALLON_PER_MINUTE = 155 ' "Impl. gal./min")'
-    US_GALLON_PER_HOUR = 156 ' "Impl. gal./h")'
-    DEGREE_FAHRENHEIT = 157 ' "°F");
-End Enum
-Public Enum EncryptionMode As Integer
-    NONE = 0
-    AES_128 = 1
-    DES_CBC = 2
-    DES_CBC_IV = 3
-    RESERVED_04 = 4
-    AES_CBC_IV = 5
-    RESERVED_06 = 6
-    AES_CBC_IV_0 = 7
-    RESERVED_08 = 8
-    RESERVED_09 = 9
-    RESERVED_10 = 10
-    RESERVED_11 = 11
-    RESERVED_12 = 12
-    TLS = 13
-    RESERVED_14 = 14
-    RESERVED_15 = 15
-End Enum
+        YEAR = 1 ''"a")'
+        MONTH = 2 ' "mo")'
+        WEEK = 3 ' "wk")'
+        DAY = 4 ' "d")'
+        HOUR = 5 ' "h")'
+        MIN = 6 ' "min")'
+        SECOND = 7 ' "s")'
+        DEGREE = 8 ' "°")'
+        DEGREE_CELSIUS = 9 ' "°C")'
+        CURRENCY = 10 ' "")'
+        METRE = 11 ' "m")'
+        METRE_PER_SECOND = 12 ' "m/s")'
+        CUBIC_METRE = 13 ' "m³")'
+        CUBIC_METRE_CORRECTED = 14 ' "m³")'
+        CUBIC_METRE_PER_HOUR = 15 ' "m³/h")'
+        CUBIC_METRE_PER_HOUR_CORRECTED = 16 ' "m³/h")'
+        CUBIC_METRE_PER_DAY = 17 ' "m³/d")'
+        CUBIC_METRE_PER_DAY_CORRECTED = 18 ' "m³/d")'
+        LITRE = 19 ' "l")'
+        KILOGRAM = 20 ' "kg")'
+        NEWTON = 21 ' "N")'
+        NEWTONMETER = 22 ' "Nm")'
+        PASCAL = 23 ' "Pa")'
+        BAR = 24 ' "bar")'
+        JOULE = 25 ' "J")'
+        JOULE_PER_HOUR = 26 ' "J/h")'
+        WATT = 27 ' "W")'
+        VOLT_AMPERE = 28 ' "VA")'
+        VAR = 29 ' "var")'
+        WATT_HOUR = 30 ' "Wh")'
+        VOLT_AMPERE_HOUR = 31 ' "VAh")'
+        VAR_HOUR = 32 ' "varh")'
+        AMPERE = 33 ' "A")'
+        COULOMB = 34 ' "C")'
+        VOLT = 35 ' "V")'
+        VOLT_PER_METRE = 36 ' "V/m")'
+        FARAD = 37 ' "F")'
+        OHM = 38 ' "Ohm")'
+        OHM_METRE = 39 ' "Ohm m²/m")'
+        WEBER = 40 ' "Wb")'
+        TESLA = 41 ' "T")'
+        AMPERE_PER_METRE = 42 ' "A/m")'
+        HENRY = 43 ' "H")'
+        HERTZ = 44 ' "Hz")'
+        ACTIVE_ENERGY_METER_CONSTANT_OR_PULSE_VALUE = 45 ' "1/=Wh)")'
+        REACTIVE_ENERGY_METER_CONSTANT_OR_PULSE_VALUE = 46 ' "1/=varh)")'
+        APPARENT_ENERGY_METER_CONSTANT_OR_PULSE_VALUE = 47 ' "1=VAh)")'
+        VOLT_SQUARED_HOURS = 48 ' "V²h")'
+        AMPERE_SQUARED_HOURS = 49 ' "A²h")'
+        KILOGRAM_PER_SECOND = 50 ' "kg/s")'
+        SIEMENS = 51 ' "S")'
+        KELVIN = 52 ' "K")'
+        VOLT_SQUARED_HOUR_METER_CONSTANT_OR_PULSE_VALUE = 53 ' "1/=V²h)")'
+        AMPERE_SQUARED_HOUR_METER_CONSTANT_OR_PULSE_VALUE = 54 ' "1/=A²h)")'
+        METER_CONSTANT_OR_PULSE_VALUE = 55 ' "1/m³")'
+        PERCENTAGE = 56 ' "%")'
+        AMPERE_HOUR = 57 ' "Ah")'
+        ENERGY_PER_VOLUME = 60 ' "Wh/m³")'
+        CALORIFIC_VALUE = 61 ' "J/m³")'
+        MOLE_PERCENT = 62 ' "Mol %")'
+        MASS_DENSITY = 63 ' "g/m³")'
+        PASCAL_SECOND = 64 ' "Pa s")'
+        SPECIFIC_ENERGY = 65 ' "J/kg")'
+        SIGNAL_STRENGTH = 70 ' "dBm")'
+        SIGNAL_STRENGTH_MICROVOLT = 71 ' "dBµv")'
+        LOGARITHMIC = 72 ' "dB")'
+        RESERVED = 253 ' "")'
+        OTHER_UNIT = 254 ' "other")'
+        COUNT = 255 ' "count")'
+        CUBIC_METRE_PER_SECOND = 150 ' "m³/s")'
+        CUBIC_METRE_PER_MINUTE = 151 ' "m³/min")'
+        KILOGRAM_PER_HOUR = 152 ' "kg/h")'
+        CUBIC_FEET = 153 ' "cft")'
+        US_GALLON = 154 ' "Impl. gal.")'
+        US_GALLON_PER_MINUTE = 155 ' "Impl. gal./min")'
+        US_GALLON_PER_HOUR = 156 ' "Impl. gal./h")'
+        DEGREE_FAHRENHEIT = 157 ' "°F");
+    End Enum
+    Public Enum EncryptionMode As Integer
+        NONE = 0
+        AES_128 = 1
+        DES_CBC = 2
+        DES_CBC_IV = 3
+        RESERVED_04 = 4
+        AES_CBC_IV = 5
+        RESERVED_06 = 6
+        AES_CBC_IV_0 = 7
+        RESERVED_08 = 8
+        RESERVED_09 = 9
+        RESERVED_10 = 10
+        RESERVED_11 = 11
+        RESERVED_12 = 12
+        TLS = 13
+        RESERVED_14 = 14
+        RESERVED_15 = 15
+    End Enum
 
-
-Module Module1
 #Region "Dichiarazioni"
     Private m_functionField As FunctionField
     Private m_description As Description
@@ -345,21 +345,27 @@ Module Module1
     Private manufacturerDetails As String
     Private deviceId As String
     Private version As Integer
-    Private deviceType As String
+    Private deviceTypeID As String
 
     Public Const OFFSET_BYTE1 = 0
     Public Const OFFSET_BYTE2 = 2
     Public Const OFFSET_BYTE3 = 4
     Public Const OFFSET_BYTE4 = 6
 #End Region
-    Sub Main()
+    ''' <summary>
+    ''' Routine per la decodifica del WMBUS
+    ''' </summary>
+    ''' <param name="telegramma">Telegramma da decodificare.</param>
+    ''' <returns>Ritorna una tupla.</returns>
+    ''' <remarks></remarks>
+    Public Function MainVBWMBUS(ByVal telegramma As String) As Tuple(Of DecodedDeviceClass, String)
+
         '                           0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9
-        Dim telegramma As String = "2644C5148003602400077A912B00202F2F046D252A562B0413DF00000001FD17400478A1DBB90000"
+        'Dim telegramma As String = "2644C5148003602400077A912B00202F2F046D252A562B0413DF00000001FD17400478A1DBB90000"
         'Dim telegramma As String = "2844C5148910504301167289105043C5140016D22B00202F2F046D19295C2B0413E800000001FD17580097FC"
         'Dim telegramma As String = "5244C51445195824010D7A4F2000202F2F046D2B275C2B0406000000008410060000000001FD1700041501000000043B00000000042B00000000025F140004610300000084401410000000848040140000000000"
         'Dim telegramma As String = "2844C5149310504301167210010000C51400162B2B00202F2F046D18295C2B0413F900000001FD1758005000"
         'Dim telegramma As String = "2B44C5144735902455087247359024C5145508560000002F2F0B6E000000426C3F2C4B6E00000002FD17000000DF21C6"
-
 
         Dim i As Integer = 0
         Dim buffer As Byte() = {}
@@ -380,7 +386,7 @@ Module Module1
             telegramma = DecodeAES(telegramma)
         End If
         If telegramma = "" Then
-            Exit Sub
+            Return Nothing
         End If
 
 
@@ -389,8 +395,10 @@ Module Module1
             buffer(j / 2) = Convert.ToInt16(Strings.Mid(telegramma, j + 1, 2), 16)
         Next
 
+        'Spacchetta tutti i pacchetti impacchettati
         Dim bufferSpacchettato = spacchetta(buffer)
 
+        'Riattribuisci al buffer un pacchetto per volta
         ReDim buffer(0)
 
         For n = 0 To bufferSpacchettato.Length - 1
@@ -410,8 +418,8 @@ Module Module1
             If buffer.Length > 2 Then
                 If buffer(1) = &HFD And buffer(2) = &H23 Then
                     subunit = subunit + (((buffer(3) And &H40) >> 6) << numDife)
-                    tariff = tariff + ((buffer(i) And &H30) >> 4) << (numDife * 2)
-                    storageNumber = storageNumber + ((buffer(i) And 15) << ((numDife * 4) + 1))
+                    tariff = tariff + ((buffer(3) And &H30) >> 4) << (numDife * 2)
+                    storageNumber = storageNumber + ((buffer(3) And 15) << ((numDife * 4) + 1))
                     numDife = (numDife + 1)
                 End If
             End If
@@ -474,17 +482,15 @@ Module Module1
                     End If
 
                 Case 3
-                    If ((buffer((i + 2)) And 128) = 128) Then
+                    If ((buffer((vib.Length + dib.Length + 2)) And 128) = 128) Then
                         ' negative
-                        dataValue = CLng((buffer(i) And 255) Or
-                        ((buffer(i + 1) And 255) * 256) Or
-                        ((buffer(i + 2) And 255) * 65536) Or 255 * 2 ^ 24)
-                        i = i + 3
+                        dataValue = CLng((buffer(vib.Length + dib.Length) And 255) Or
+                        ((buffer(vib.Length + dib.Length + 1) And 255) * 256) Or
+                        ((buffer(vib.Length + dib.Length + 2) And 255) * 65536) Or 255 * 2 ^ 24)
                     Else
-                        dataValue = CLng(buffer(i + 1) Or
-                        (buffer(i + 2) << 8) Or
-                        (buffer(i + 3) << 256))
-                        i = i + 3
+                        dataValue = CLng(buffer(vib.Length + dib.Length + 1) Or
+                        (buffer(vib.Length + dib.Length + 2) << 8) Or
+                        (buffer(vib.Length + dib.Length + 3) << 256))
                     End If
 
                     m_dataValueType = DataValueType._Long
@@ -517,42 +523,37 @@ Module Module1
                     End If
 
                 Case 5
-                    Dim bytebuffer As Byte() = CopyofRange(buffer, i, i + 4)
+                    Dim bytebuffer As Byte() = CopyofRange(buffer, vib.Length + dib.Length, vib.Length + dib.Length + 4)
                     Dim doubleDatavalue As Double = BitConverter.ToSingle(bytebuffer, 0)
-                    i = i + 4
-                    dataValue = CDbl(doubleDatavalue)
+                    dataValue = doubleDatavalue
                     m_dataValueType = DataValueType._Double
                 Case 6
-                    If ((buffer((i + 5)) And 128) = 128) Then
+                    If (buffer(vib.Length + dib.Length + 5) And 128) = 128 Then
                         ' negative
-                        dataValue = CLng((buffer(i) And 255) Or
-                        (((buffer(i + 1) And 255) * 256)) Or
-                        (((buffer(i + 2) And 255) * 2 ^ 16)) Or
-                        (((buffer(i + 3) And 255) * 2 ^ 24)) Or
-                        (((CType(buffer(i + 4), Long) And 255) * 2 ^ 32)) Or
-                        (((CType(buffer(i + 5), Long) And 255) * 2 ^ 40)) Or (255 * 2 ^ 48) Or (256 << 56))
-                        i = i + 6
+                        dataValue = buffer(vib.Length + dib.Length) Or
+                        buffer(vib.Length + dib.Length + 1) << 8 Or
+                        buffer(vib.Length + dib.Length + 2) << 16 Or
+                        buffer(vib.Length + dib.Length + 3) << 24 Or
+                        CType(buffer(vib.Length + dib.Length + 4), Long) << 32 Or
+                        CType(buffer(vib.Length + dib.Length + 5), Long) << 40 Or (255 << 48) Or (256 << 56)
                     Else
-                        i = i + 1
-                        dataValue = CLng(((buffer(i) And 255) Or
-                    (((buffer(i + 1) And 255) * 256) Or
-                    (((buffer(i + 2) And 255) * 65536) Or
-                    (((buffer(i + 3) And 255) * 2 ^ 24) Or
-                    (((CType(buffer(i + 4), Long) And 255) * 2 ^ 32) Or
-                    ((CType(buffer(i + 5), Long) And 255) * 2 ^ 40)))))))
-                        i = i + 5
+                        dataValue = CLng((buffer(vib.Length + dib.Length) Or
+                          buffer(vib.Length + dib.Length + 1) << 8 Or
+                          buffer(vib.Length + dib.Length + 2) << 16 Or
+                          buffer(vib.Length + dib.Length + 3) << 24 Or
+                          CType(buffer(vib.Length + dib.Length + 4), Long) << 32) Or
+                          CType(buffer(vib.Length + dib.Length + 5), Long) << 40)
                     End If
-
                     m_dataValueType = DataValueType._Long
                 Case 7
-                    i = i + 1
-                    dataValue = CLng((buffer(i) Or ((buffer(i + 1) * 2 ^ 8) Or
-                                 ((buffer(i + 2) * 2 ^ 16) Or
-                                 ((buffer(i + 3) * 2 ^ 24) Or
-                                 ((CType(buffer(i + 4), Long) * 2 ^ 32) Or
-                                 ((CType(buffer(i + 5), Long) * 2 ^ 40) Or
-                                 ((CType(buffer(i + 6), Long) * 2 ^ 48) Or
-                                 (CType(buffer(i + 7), Long) << 56)))))))))
+                    dataValue = CLng(buffer(vib.Length + dib.Length) Or
+                                 buffer(vib.Length + dib.Length + 1) << 8 Or
+                                 buffer(vib.Length + dib.Length + 2) << 16 Or
+                                 buffer(vib.Length + dib.Length + 3) << 24 Or
+                                 CType(buffer(vib.Length + dib.Length + 4), Long) << 32 Or
+                                 CType(buffer(vib.Length + dib.Length + 5), Long) << 40 Or
+                                 CType(buffer(vib.Length + dib.Length + 6), Long) << 48 Or
+                                 CType(buffer(vib.Length + dib.Length + 7), Long) << 56)
                     i = i + 7
                     m_dataValueType = DataValueType._Long
                 Case 9
@@ -566,33 +567,33 @@ Module Module1
                 Case 14
                     i = setBCD(buffer, vib.Length + dib.Length, 6)
                 Case 13
-                    Dim variableLength As Integer = (buffer(i + 1) And 255)
-                    i = i + 1
-                    Dim dataLength0x0d As Integer
-                    If (variableLength < 192) Then
-                        dataLength0x0d = variableLength
-                    ElseIf ((variableLength >= 192) AndAlso (variableLength <= 201)) Then
-                        dataLength0x0d = (2 * (variableLength - 192))
-                    ElseIf ((variableLength >= 208) AndAlso (variableLength <= 217)) Then
-                        dataLength0x0d = (2 * (variableLength - 208))
-                    ElseIf ((variableLength >= 224) AndAlso (variableLength <= 239)) Then
-                        dataLength0x0d = (variableLength - 224)
-                    ElseIf (variableLength = 248) Then
-                        dataLength0x0d = 4
-                    Else
-                        Throw New Exception(("Unsupported LVAR Field: " + variableLength))
-                    End If
+                    'Ciò che segue è da verificare
+                    'Dim variableLength As Integer = buffer(vib.Length + dib.Length + 1)
+                    'Dim dataLength0x0d As Integer
+                    'If (variableLength < 192) Then
+                    '    dataLength0x0d = variableLength
+                    'ElseIf ((variableLength >= 192) AndAlso (variableLength <= 201)) Then
+                    '    dataLength0x0d = (2 * (variableLength - 192))
+                    'ElseIf ((variableLength >= 208) AndAlso (variableLength <= 217)) Then
+                    '    dataLength0x0d = (2 * (variableLength - 208))
+                    'ElseIf ((variableLength >= 224) AndAlso (variableLength <= 239)) Then
+                    '    dataLength0x0d = (variableLength - 224)
+                    'ElseIf (variableLength = 248) Then
+                    '    dataLength0x0d = 4
+                    'Else
+                    '    Throw New Exception(("Unsupported LVAR Field: " + variableLength))
+                    'End If
 
 
-                    Dim rawData() As Byte = New Byte((dataLength0x0d) - 1) {}
-                    For k = 0 To dataLength0x0d - 1
-                        rawData(k) = buffer(i + dataLength0x0d - 1 - k)
-                        k = (k + 1)
-                    Next
+                    'Dim rawData() As Byte = New Byte((dataLength0x0d) - 1) {}
+                    'For k = 0 To dataLength0x0d - 1
+                    '    rawData(k) = buffer(i + dataLength0x0d - 1 - k)
+                    '    k = (k + 1)
+                    'Next
 
-                    i = (i + dataLength0x0d)
-                    dataValue = System.Text.Encoding.Default.GetString(rawData)
-                    m_dataValueType = DataValueType._String
+                    'i = (i + dataLength0x0d)
+                    'dataValue = System.Text.Encoding.Default.GetString(rawData)
+                    'm_dataValueType = DataValueType._String
                 Case Else
                     Dim msg As String = String.Format("Unknown Data Field in DIF: " & dataField.ToString)
                     Throw New Exception(msg)
@@ -643,7 +644,7 @@ Module Module1
             DecodedData.manufacturerDetails = manufacturerDetails
             DecodedData.deviceId = deviceId
             DecodedData.version = version
-            DecodedData.deviceType = deviceType
+            DecodedData.deviceType = deviceTypeID
 
             DecodedData.DecodedDataField(DecodedData.DecodedDataField.Length - 1).calendar = calendar
             DecodedData.DecodedDataField(DecodedData.DecodedDataField.Length - 1).datavalue = dataValue
@@ -658,7 +659,7 @@ Module Module1
             DecodedData.DecodedDataField(DecodedData.DecodedDataField.Length - 1).unitDescription = [Enum].GetName(GetType(DlmsUnit), unit)
             DecodedData.DecodedDataField(DecodedData.DecodedDataField.Length - 1).unitSymbol = getUnit(unit)
 
-            calendar = New DateTime
+            calendar = Nothing
             dataValue = ""
             multiplierExponent = 0
             m_dataValueType = 0
@@ -671,12 +672,12 @@ Module Module1
 
         Next
 
-salta:
         Dim json As String = JsonConvert.SerializeObject(DecodedData)
-        Console.WriteLine(json)
+
+        Return New Tuple(Of DecodedDeviceClass, String)(DecodedData, json)
 
 
-    End Sub
+    End Function
     Private Function spacchetta(ByVal buffer As Byte()) As Byte()()
         Dim bufferSpacchettato As Byte()() = {}
         Dim payloadStart As Integer = 0
@@ -733,6 +734,9 @@ salta:
             If existVIFE Then lunghezzaDaCopiare += 1
 
             Array.Resize(dataBlock, lunghezzaDaCopiare)
+            If j + payloadStart + lunghezzaDaCopiare > buffer.Length Then
+                Exit For
+            End If
             Array.Copy(buffer, j + payloadStart, dataBlock, 0, lunghezzaDaCopiare)
 
             Array.Resize(bufferSpacchettato, bufferSpacchettato.Length + 1)
@@ -753,7 +757,7 @@ salta:
             manufacturerDetails = selectManufacturerDetailsClass.selectManufacturerDetails(manufacturerId)
 
             version = (bais(8) And 255)
-            deviceType = [Enum].GetName(GetType(DeviceType), bais(9) And 255)
+            deviceTypeID = [Enum].GetName(GetType(DeviceType), bais(9) And 255)
 
         Catch e As Exception
             ' should not occur
@@ -1658,7 +1662,7 @@ salta:
         End If
 
     End Sub
-    Public Function CopyofRange(ByVal arra As Byte(), FromCopy As Integer, ToCopy As Integer) As Byte()
+    Private Function CopyofRange(ByVal arra As Byte(), FromCopy As Integer, ToCopy As Integer) As Byte()
         Dim arrb As Byte() = {}
         Array.Resize(arrb, ToCopy - FromCopy)
         Array.Copy(arra, FromCopy, arrb, 0, ToCopy - FromCopy)
@@ -1669,7 +1673,7 @@ salta:
         m_dataValueType = DataValueType.BCD
         Return (i + j)
     End Function
-    Public Function getUnit(ByVal i As Integer) As String
+    Private Function getUnit(ByVal i As Integer) As String
 
         Dim value As String = String.Empty
 
@@ -1927,7 +1931,7 @@ salta:
 
     End Function
 
-End Module
+End Class
 Public Class DecodedDeviceClass
     Public Property manufacturerId As String
     Public Property manufacturerDetails As String
@@ -1957,4 +1961,3 @@ Public Structure DecodedDataFields
     Public unitSymbol As String
     Public Property multiplierexponent As Integer
 End Structure
-
