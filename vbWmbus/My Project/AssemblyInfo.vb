@@ -18,7 +18,7 @@ Imports System.Runtime.InteropServices
 <Assembly: ComVisible(False)>
 
 'Se il progetto viene esposto a COM, il GUID seguente verrà utilizzato come ID della libreria dei tipi
-<Assembly: Guid("673e1de0-5971-4271-9732-87e56543c922")>
+<Assembly: Guid("1f8f1c65-9a34-40c8-a76a-a24e3cade9a3")>
 
 ' Le informazioni sulla versione di un assembly sono costituite dai seguenti quattro valori:
 '
