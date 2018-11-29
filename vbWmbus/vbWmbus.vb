@@ -318,6 +318,24 @@ Public Class vbWmbus
         RESERVED_14 = 14
         RESERVED_15 = 15
     End Enum
+    Public Enum messageType As Integer
+        SND_NR = &H44
+        SND_IR = &H46
+        ACC_NR = &H47
+        ACC_DMD = &H48
+        ACK1 = &H0
+        ACK2 = &H10
+        ACK3 = &H20
+        ACK4 = &H30
+        NACK1 = &H1
+        NACK2 = &H11
+        NACK3 = &H21
+        NACK4 = &H33
+        RSP_UD1 = &H8
+        RSP_UD2 = &H18
+        RSP_UD3 = &H28
+        RSP_UD4 = &H38
+    End Enum
 
 #Region "Dichiarazioni"
     Private m_functionField As FunctionField
@@ -346,11 +364,20 @@ Public Class vbWmbus
     Private deviceId As String
     Private version As Integer
     Private deviceTypeID As String
+    Private accessNumber As String
+    Private status As String
+    Private signature As String
+    Private messageTypeID As String
 
     Public Const OFFSET_BYTE1 = 0
     Public Const OFFSET_BYTE2 = 2
     Public Const OFFSET_BYTE3 = 4
     Public Const OFFSET_BYTE4 = 6
+    Public Const FRAME_A_SHORT = "01"
+    Public Const FRAME_A_LONG = "01"
+    Public Const FRAME_B = "02"
+    Public Const FRAME_RC = "03"
+
 #End Region
     ''' <summary>
     ''' Routine per la decodifica del WMBUS
@@ -366,6 +393,11 @@ Public Class vbWmbus
         'Dim telegramma As String = "5244C51445195824010D7A4F2000202F2F046D2B275C2B0406000000008410060000000001FD1700041501000000043B00000000042B00000000025F140004610300000084401410000000848040140000000000"
         'Dim telegramma As String = "2844C5149310504301167210010000C51400162B2B00202F2F046D18295C2B0413F900000001FD1758005000"
         'Dim telegramma As String = "2B44C5144735902455087247359024C5145508560000002F2F0B6E000000426C3F2C4B6E00000002FD17000000DF21C6"
+        'Dim telegramma As String = "E344E3102290980601087AD30A00000F01F9162B450040000000000000A10100D700000000000000000000000000000000000000000000002E00004600006500006F00004A00000F00000000000000000000000000001200000400002A00005A00006A0000590000420000D9000701D000FC0014012B015C01430143013D01300157023D025E02740249023D022D015E014C01520136021E02350245025C025A02450208011C014801310132012D0120013E013E0175017201570102011F014B013C0142012A01020111014D014C012C012801A5413D2129AB4A214D70D6F9CC128005C900000000000000"
+        'E310 = digicom
+        '2434 = Maddalena
+        'C514 = Engelmann
+
 
         Dim i As Integer = 0
         Dim buffer As Byte() = {}
@@ -380,12 +412,18 @@ Public Class vbWmbus
 
         'ricerca del marker AES (se non trovato = criptato)
         Dim found1 As Boolean = InStr(telegramma, "2F2F")
+        Dim frame_type As String = telegramma.Substring(32, 2)
+
 
         'Decodifica il frame criptato
-        If Not found1 Then
+        If Not found1 And manufacturerId = "MAD" Then
             telegramma = DecodeAES(telegramma)
+        ElseIf Not found1 And Not manufacturerId = "MAD" Then
+            MsgBox("Encrypted telegram, unknown AES key")
+            Return Nothing
         End If
-        If telegramma = "" Then
+        If Not found1 And (frame_type = FRAME_A_SHORT Or frame_type = FRAME_B) Then
+            MsgBox("Presumably not a Wmbus telegram. DLMS/COSEM?")
             Return Nothing
         End If
 
@@ -554,7 +592,6 @@ Public Class vbWmbus
                                  CType(buffer(vib.Length + dib.Length + 5), Long) << 40 Or
                                  CType(buffer(vib.Length + dib.Length + 6), Long) << 48 Or
                                  CType(buffer(vib.Length + dib.Length + 7), Long) << 56)
-                    i = i + 7
                     m_dataValueType = DataValueType._Long
                 Case 9
                     i = setBCD(buffer, vib.Length + dib.Length, 1)
@@ -567,33 +604,30 @@ Public Class vbWmbus
                 Case 14
                     i = setBCD(buffer, vib.Length + dib.Length, 6)
                 Case 13
-                    'Ciò che segue è da verificare
-                    'Dim variableLength As Integer = buffer(vib.Length + dib.Length + 1)
-                    'Dim dataLength0x0d As Integer
-                    'If (variableLength < 192) Then
-                    '    dataLength0x0d = variableLength
-                    'ElseIf ((variableLength >= 192) AndAlso (variableLength <= 201)) Then
-                    '    dataLength0x0d = (2 * (variableLength - 192))
-                    'ElseIf ((variableLength >= 208) AndAlso (variableLength <= 217)) Then
-                    '    dataLength0x0d = (2 * (variableLength - 208))
-                    'ElseIf ((variableLength >= 224) AndAlso (variableLength <= 239)) Then
-                    '    dataLength0x0d = (variableLength - 224)
-                    'ElseIf (variableLength = 248) Then
-                    '    dataLength0x0d = 4
-                    'Else
-                    '    Throw New Exception(("Unsupported LVAR Field: " + variableLength))
-                    'End If
+                    Dim variableLength As Integer = buffer(vib.Length + dib.Length + 1)
+                    Dim dataLength0x0d As Integer
+                    If variableLength < 192 Then
+                        dataLength0x0d = variableLength
+                    ElseIf variableLength >= 192 AndAlso variableLength <= 201 Then
+                        dataLength0x0d = 2 * (variableLength - 192)
+                    ElseIf variableLength >= 208 AndAlso variableLength <= 217 Then
+                        dataLength0x0d = 2 * (variableLength - 208)
+                    ElseIf variableLength >= 224 AndAlso variableLength <= 239 Then
+                        dataLength0x0d = variableLength - 224
+                    ElseIf variableLength = 248 Then
+                        dataLength0x0d = 4
+                    Else
+                        Throw New Exception("Unsupported LVAR Field: " + variableLength)
+                    End If
 
+                    Dim rawData() As Byte = New Byte(dataLength0x0d - 1) {}
+                    For k = 0 To dataLength0x0d - 1
+                        rawData(k) = buffer(vib.Length + dib.Length + dataLength0x0d - 1 - k)
+                        k = (k + 1)
+                    Next
 
-                    'Dim rawData() As Byte = New Byte((dataLength0x0d) - 1) {}
-                    'For k = 0 To dataLength0x0d - 1
-                    '    rawData(k) = buffer(i + dataLength0x0d - 1 - k)
-                    '    k = (k + 1)
-                    'Next
-
-                    'i = (i + dataLength0x0d)
-                    'dataValue = System.Text.Encoding.Default.GetString(rawData)
-                    'm_dataValueType = DataValueType._String
+                    dataValue = System.Text.Encoding.ASCII.GetString(rawData)
+                    m_dataValueType = DataValueType._String
                 Case Else
                     Dim msg As String = String.Format("Unknown Data Field in DIF: " & dataField.ToString)
                     Throw New Exception(msg)
@@ -645,8 +679,16 @@ Public Class vbWmbus
             DecodedData.deviceId = deviceId
             DecodedData.version = version
             DecodedData.deviceType = deviceTypeID
+            DecodedData.accessNumber = accessNumber
+            DecodedData.status = status
+            DecodedData.signature = signature
+            DecodedData.messageTypeID = messageTypeID
 
-            DecodedData.DecodedDataField(DecodedData.DecodedDataField.Length - 1).calendar = calendar
+
+            If calendar.Date <> #01/01/0001# Then
+                dataValue = calendar
+            End If
+
             DecodedData.DecodedDataField(DecodedData.DecodedDataField.Length - 1).datavalue = dataValue
             DecodedData.DecodedDataField(DecodedData.DecodedDataField.Length - 1).datavalueSimplified = DataX
             DecodedData.DecodedDataField(DecodedData.DecodedDataField.Length - 1).multiplierexponent = multiplierExponent
@@ -660,7 +702,7 @@ Public Class vbWmbus
             DecodedData.DecodedDataField(DecodedData.DecodedDataField.Length - 1).unitSymbol = getUnit(unit)
 
             calendar = Nothing
-            dataValue = ""
+            dataValue = Nothing
             multiplierExponent = 0
             m_dataValueType = 0
             m_description = 0
@@ -681,12 +723,16 @@ Public Class vbWmbus
     Private Function spacchetta(ByVal buffer As Byte()) As Byte()()
         Dim bufferSpacchettato As Byte()() = {}
         Dim payloadStart As Integer = 0
-        For k = 0 To buffer.Length - 1
+        For k = 0 To buffer.Length - 2
             If buffer(k) = &H2F And buffer(k + 1) = &H2F Then
                 payloadStart = k + 2
                 Exit For
             End If
         Next
+        If payloadStart = 0 Then
+            payloadStart = 9
+        End If
+
         Dim payload As Byte() = {}
         Array.Resize(payload, buffer.Length - payloadStart)
         Array.Copy(buffer, payloadStart, payload, 0, buffer.Length - payloadStart)
@@ -699,6 +745,7 @@ Public Class vbWmbus
                 existDIFE = True
             End If
 
+            Dim DLMS As Boolean = False
             Dim datafieldLength As Integer = 0
             Select Case DIF
                 Case 0 To 6
@@ -706,7 +753,10 @@ Public Class vbWmbus
                 Case 7
                     datafieldLength = 8
                 Case 8
-                    datafieldLength = 0 'tbd
+                    If payload(j + 1) = &H7A Then 'selection for readout
+                        DLMS = True
+                        datafieldLength = 4
+                    End If
                 Case 9
                     datafieldLength = 1
                 Case 10
@@ -727,6 +777,7 @@ Public Class vbWmbus
             If payload(j + 1) > 127 Then
                 existVIFE = True
             End If
+
 
             Dim dataBlock As Byte() = {}
             Dim lunghezzaDaCopiare = datafieldLength + 2 '+1 per DIF +1 per VIF
@@ -749,21 +800,57 @@ Public Class vbWmbus
     End Function
     Private Sub decodePreamble(ByVal buffer As Byte())
 
-        Dim bais As Byte() = CopyofRange(buffer, 0, 16)
+        Dim bais As Byte() = CopyofRange(buffer, 0, 14)
         'Me.hashCode = Arrays.hashCode(Me.bytes)
         Try
+            messageTypeID = getMessageType(bais(1))
             deviceId = decodeDeviceId(bais)
             manufacturerId = decodeManufacturerId(bais)
             manufacturerDetails = selectManufacturerDetailsClass.selectManufacturerDetails(manufacturerId)
-
             version = (bais(8) And 255)
             deviceTypeID = [Enum].GetName(GetType(DeviceType), bais(9) And 255)
+            accessNumber = bais(10)
+            status = decodeStatusType(bais(11))
+            signature = Hex(bais(12)).ToString.PadLeft(2, "0") & Hex(bais(13)).ToString.PadLeft(2, "0")
 
         Catch e As Exception
             ' should not occur
             Throw New Exception(e.Message)
         End Try
     End Sub
+    Private Function decodeStatusType(ByVal bais As Byte) As String
+        Dim idArray As String = ""
+
+        If bais = 0 Then
+            idArray = idArray & "No Error. "
+        ElseIf bais And 1 = 1 Then
+            idArray = idArray & "Application busy. "
+        ElseIf bais = 2 Then
+            idArray = idArray & "Error present. "
+        ElseIf bais = 3 Then
+            idArray = idArray & "Error present. "
+        End If
+        If (bais And &B100) >> 2 = 1 Then
+            idArray = idArray & "Power low. "
+        End If
+        If (bais And &B1000) >> 3 = 1 Then
+            idArray = idArray & "Permanent error. "
+        End If
+        If (bais And &B10000) >> 4 = 1 Then
+            idArray = idArray & "Temporary error. "
+        End If
+        If (bais And &B100000) >> 5 = 1 Then
+            idArray = idArray & "Other manufacturer specific error. "
+        End If
+        If (bais And &B1000000) >> 6 = 1 Then
+            idArray = idArray & "Other manufacturer specific error. "
+        End If
+        If (bais And &B10000000) >> 7 = 1 Then
+            idArray = idArray & "Other manufacturer specific error. "
+        End If
+
+        Return idArray
+    End Function
     Private Function decodeDeviceId(ByVal bais As Byte()) As String
         Dim idArray As String = Hex(bais(7)).ToString.PadLeft(2, "0") & Hex(bais(6)).ToString.PadLeft(2, "0") &
             Hex(bais(5)).ToString.PadLeft(2, "0") & Hex(bais(4)).ToString.PadLeft(2, "0")
@@ -1673,6 +1760,31 @@ Public Class vbWmbus
         m_dataValueType = DataValueType.BCD
         Return (i + j)
     End Function
+    Private Function getMessageType(ByVal i As Integer) As String
+
+        Dim value As String = String.Empty
+
+        Select Case i
+            Case &H44
+                value = "Send spontaneous/periodical application data without request (Send /No Reply)"
+            Case &H46
+                value = "Send manually initiated installation data (Send Installation Request)"
+            Case &H47
+                value = "Contains no data – signals an empty transmission or provides the opportunity to access the bidirectional meter, between two transmissions of application data."
+            Case &H48
+                value = "Access demand to master in order to request new important application data (alerts)"
+            Case &H0 Or &H10 Or &H20 Or &H30
+                value = "Acknowledge the reception of a SND-UD (acknowledgement of transmission only) or response to an REQ-UD1, when no alert happened"
+            Case &H1 Or &H11 Or &H21 Or &H31
+                value = "Meter reception buffer overflow or Master datagram with invalid C field"
+            Case &H8 Or &H18 Or &H28 Or &H38
+                value = "Response of application data after a request from master (response of user data)"
+            Case Else
+                value = "Unknown"
+        End Select
+
+        Return value
+    End Function
     Private Function getUnit(ByVal i As Integer) As String
 
         Dim value As String = String.Empty
@@ -1868,6 +1980,10 @@ Public Class vbWmbus
 
         ' frame = "9644C5149410504301077294105043C5140007170B8105750831D30960315F4B7B158BD8D553C6A355B3049AE1611A99418DD54E0AA3BD91318059F439946AFCE30D14F8397B97407BC8D66075D4DC340844B0CCAC738FB8D27B6C0471C6723D1EDBB47D6E51077FFF7A2F41F2CB23CC86E957AF913DA21FA596E491D06409700D90FABEE06404700575D954800375D95590FABEE00402"
         ' decodificato diventa "2f2f426cdf1c44130000000001fd174884011301000000c401130100000084021301000000c402130000000084031300000000c403130000000084041300000000c404130000000084051300000000c405130000000084061300000000c406131efa43d3c7705b8b5ad1d64691064a79665083feff7d5111195a2c2c3bb45746"
+
+        'Dim telegramma As String = "5244C51445195824010D7A4F2000202F2F046D2B275C2B0406000000008410060000000001FD1700041501000000043B00000000042B00000000025F140004610300000084401410000000848040140000000000"
+
+
         If frame <> "" Then
             frame_type = Mid(frame, 21, 2)
             Select Case frame_type
@@ -1938,6 +2054,11 @@ Public Class DecodedDeviceClass
     Public Property deviceId As String
     Public Property version As Integer
     Public Property deviceType As String
+    Public Property accessNumber As String
+    Public Property status As String
+    Public Property signature As String
+    Public Property messageTypeID As String
+
     Public DecodedDataField As DecodedDataFields() = {}
     Public Sub New()
         Me.manufacturerId = ""
@@ -1954,7 +2075,6 @@ Public Structure DecodedDataFields
     Public subunit As String
     Public tariff As String
     Public storagenumber As String
-    Public calendar As DateTime
     Public datavalue As Object
     Public datavalueSimplified As String
     Public unitDescription As String
