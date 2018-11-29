@@ -394,6 +394,8 @@ Public Class vbWmbus
         'Dim telegramma As String = "2844C5149310504301167210010000C51400162B2B00202F2F046D18295C2B0413F900000001FD1758005000"
         'Dim telegramma As String = "2B44C5144735902455087247359024C5145508560000002F2F0B6E000000426C3F2C4B6E00000002FD17000000DF21C6"
         'Dim telegramma As String = "E344E3102290980601087AD30A00000F01F9162B450040000000000000A10100D700000000000000000000000000000000000000000000002E00004600006500006F00004A00000F00000000000000000000000000001200000400002A00005A00006A0000590000420000D9000701D000FC0014012B015C01430143013D01300157023D025E02740249023D022D015E014C01520136021E02350245025C025A02450208011C014801310132012D0120013E013E0175017201570102011F014B013C0142012A01020111014D014C012C012801A5413D2129AB4A214D70D6F9CC128005C900000000000000"
+        'Dim telegramma As String = "5044243434398583000D7A9B0000202F2F046D01295D2B0406000000008410060000000001FD1710041303000000043B00000000042B00000000025B1700025F17000261080003FD0C05000002FD0B301100F285"
+
         'E310 = digicom
         '2434 = Maddalena
         'C514 = Engelmann
@@ -522,13 +524,13 @@ Public Class vbWmbus
                 Case 3
                     If ((buffer((vib.Length + dib.Length + 2)) And 128) = 128) Then
                         ' negative
-                        dataValue = CLng((buffer(vib.Length + dib.Length) And 255) Or
-                        ((buffer(vib.Length + dib.Length + 1) And 255) * 256) Or
-                        ((buffer(vib.Length + dib.Length + 2) And 255) * 65536) Or 255 * 2 ^ 24)
+                        dataValue = CLng(buffer(vib.Length + dib.Length) Or
+                        (buffer(vib.Length + dib.Length + 1) * 256) Or
+                        ((buffer(vib.Length + dib.Length + 2) * 65536) Or 255) << 24)
                     Else
-                        dataValue = CLng(buffer(vib.Length + dib.Length + 1) Or
-                        (buffer(vib.Length + dib.Length + 2) << 8) Or
-                        (buffer(vib.Length + dib.Length + 3) << 256))
+                        dataValue = CLng(buffer(vib.Length + dib.Length) Or
+                        (buffer(vib.Length + dib.Length + 1) << 8) Or
+                        (buffer(vib.Length + dib.Length + 2) << 256))
                     End If
 
                     m_dataValueType = DataValueType._Long
@@ -1072,9 +1074,6 @@ Public Class vbWmbus
         ElseIf ((vif And 127) = 118) Then
             ' E111 0110
             m_description = Description.MANUFACTURER_SPECIFIC
-        ElseIf ((vif And 127) = 125) Then
-            ' 
-            m_description = Description.ERROR_MASK
         ElseIf ((vif And 127) >= 119) Then
             ' E111 0111 - E111 1111
             m_description = Description.RESERVED
