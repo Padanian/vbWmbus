@@ -1,0 +1,12 @@
+-classpath '/home/aschall/git/jdlms/cli-app/build/classes/java/main:/home/aschall/git/jdlms/cli-app/build/resources/main:/home/aschall/git/jdlms/build/libs/jdlms-1.6.0.jar:/home/aschall/.gradle/caches/modules-2/files-2.1/org.openmuc/jasn1/1.9.0/833882bea46ad3d84ae7c84c7e904f2c4c520ddb/jasn1-1.9.0.jar:/home/aschall/.gradle/caches/modules-2/files-2.1/org.openmuc/jrxtx/1.0.1/778bbe41c9c8b8fd0091f1e8977d645fc26a36c/jrxtx-1.0.1.jar:/home/aschall/.gradle/caches/modules-2/files-2.1/org.bouncycastle/bcprov-jdk15on/1.59/2507204241ab450456bdb8e8c0a8f986e418bd99/bcprov-jdk15on-1.59.jar'
+-d '/home/aschall/git/jdlms/cli-app/build/docs/javadoc'
+-doctitle 'cli-app 1.6.0 API'
+-quiet 
+-windowtitle 'cli-app 1.6.0 API'
+'/home/aschall/git/jdlms/cli-app/src/main/java/org/openmuc/jdlms/app/client/SnActionProcessor.java'
+'/home/aschall/git/jdlms/cli-app/src/main/java/org/openmuc/jdlms/app/client/ConsoleClientCliParser.java'
+'/home/aschall/git/jdlms/cli-app/src/main/java/org/openmuc/jdlms/app/client/GenActionProcessor.java'
+'/home/aschall/git/jdlms/cli-app/src/main/java/org/openmuc/jdlms/app/client/ConsoleClient.java'
+'/home/aschall/git/jdlms/cli-app/src/main/java/org/openmuc/jdlms/app/client/LnActionProcessor.java'
+'/home/aschall/git/jdlms/cli-app/src/main/java/org/openmuc/jdlms/app/server/SampleClass.java'
+'/home/aschall/git/jdlms/cli-app/src/main/java/org/openmuc/jdlms/app/server/ConsoleServer.java'

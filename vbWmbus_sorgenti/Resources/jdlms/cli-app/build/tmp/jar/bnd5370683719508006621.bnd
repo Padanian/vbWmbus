@@ -1,0 +1,10 @@
+Import-Package=javax.xml.bind,org.openmuc.jdlms;version\="[1.6,2)",org.openmuc.jdlms.datatypes;version\="[1.6,2)",org.openmuc.jdlms.interfaceclass;version\="[1.6,2)",org.openmuc.jdlms.interfaceclass.attribute;version\="[1.6,2)",org.openmuc.jdlms.interfaceclass.method;version\="[1.6,2)",org.openmuc.jdlms.internal.cli;version\="[1.6,2)",org.openmuc.jdlms.sessionlayer.server;version\="[1.6,2)",org.openmuc.jdlms.settings.client;version\="[1.6,2)"
+Bundle-Name=cli-app
+Export-Package=org.openmuc.jdlms.app.client;version\="1.6.0",org.openmuc.jdlms.app.server;version\="1.6.0";uses\:\="org.openmuc.jdlms,org.openmuc.jdlms.datatypes",org.openmuc.jdlms.internal.cli;version\="1.6.0"
+Created-By=1.8.0_162 (Oracle Corporation)
+Bundle-Version=1.6.0
+Bundle-ManifestVersion=2
+Bnd-LastModified=1525434637000
+Require-Capability=osgi.ee;filter\:\="(&(osgi.ee\=JavaSE)(version\=1.7))"
+Tool=Bnd-3.4.0.201707252008
+Bundle-SymbolicName=org.openmuc.cli-app

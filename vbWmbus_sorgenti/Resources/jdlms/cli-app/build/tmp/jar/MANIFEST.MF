@@ -1,0 +1,20 @@
+Manifest-Version: 1.0
+Export-Package: org.openmuc.jdlms.app.client;version="1.6.0",org.openm
+ uc.jdlms.app.server;version="1.6.0";uses:="org.openmuc.jdlms,org.open
+ muc.jdlms.datatypes",org.openmuc.jdlms.internal.cli;version="1.6.0"
+Bundle-SymbolicName: org.openmuc.cli-app
+Bundle-Version: 1.6.0
+Bundle-Name: cli-app
+Bundle-ManifestVersion: 2
+Bnd-LastModified: 1525434637000
+Import-Package: javax.xml.bind,org.openmuc.jdlms;version="[1.6,2)",org
+ .openmuc.jdlms.datatypes;version="[1.6,2)",org.openmuc.jdlms.interfac
+ eclass;version="[1.6,2)",org.openmuc.jdlms.interfaceclass.attribute;v
+ ersion="[1.6,2)",org.openmuc.jdlms.interfaceclass.method;version="[1.
+ 6,2)",org.openmuc.jdlms.internal.cli;version="[1.6,2)",org.openmuc.jd
+ lms.sessionlayer.server;version="[1.6,2)",org.openmuc.jdlms.settings.
+ client;version="[1.6,2)"
+Require-Capability: osgi.ee;filter:="(&(osgi.ee=JavaSE)(version=1.7))"
+Created-By: 1.8.0_162 (Oracle Corporation)
+Tool: Bnd-3.4.0.201707252008
+

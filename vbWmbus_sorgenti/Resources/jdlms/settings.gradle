@@ -1,0 +1,5 @@
+include "axdr-compiler", "cli-app", "jdlms-annotation-processor"
+
+project(":axdr-compiler").projectDir = file("asn1/axdr-compiler")
+project(":cli-app").projectDir = file("cli-app")
+project(":jdlms-annotation-processor").projectDir = file("server-annotation-processor")

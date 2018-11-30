@@ -1,0 +1,32 @@
+def projectName = 'jDLMS Annotation Processor'
+def projectDescription = 'This annotation processes the jDLMS server annotations.'
+
+dependencies {
+    compile project(':')
+    compileOnly group: 'com.google.auto.service', name: 'auto-service', version: '1.0-rc4'
+}
+
+jar {
+  manifest {
+    name = projectName
+    instruction 'Export-Package', '*'
+  }
+}
+uploadArchives {
+  repositories {
+    mavenDeployer {
+      pom.project {
+        name projectName
+        description projectDescription
+        artifactId 'jdlms-annotation-processor'
+        licenses {
+          license {
+            name "GNU General Public License"
+            url "http://www.gnu.org/copyleft/gpl-3.0.html"
+            distribution "repo"
+          }
+        }
+      }
+    }
+  }
+}

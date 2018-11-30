@@ -1,0 +1,6 @@
+
+eclipse.project.name = 'jdlms-cli-app'
+
+dependencies {
+  compile project(':')
+}
