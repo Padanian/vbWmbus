@@ -504,15 +504,33 @@ Public Class vbWmbus
 
                 Case 2
                     If dateTypeG Then
-                        Dim day As Integer = (31 And buffer(vib.Length + dib.Length))
-                        Dim year1 As Integer = ((224 And buffer(vib.Length + dib.Length)) \ 2 ^ 5)
-                        Dim month As Integer = (15 And buffer(vib.Length + dib.Length + 1))
-                        If month = 15 Then month = DateTime.Now.Month
-                        Dim year2 As Integer = ((240 And buffer(vib.Length + dib.Length + 1)) >> 1)
-                        Dim year As Integer = (2000 + (year1 + year2))
-                        Dim calendar As DateTime = New DateTime(year, month, day, 0, 0, 0)
-                        dataValue = calendar.Date.ToShortDateString
-                        m_dataValueType = DataValueType._Date
+                        Dim day As Integer = (buffer(vib.Length + dib.Length) And 31)
+                        Dim dayEffective As String = ""
+                        If day = 0 Then
+                            dayEffective = "Every day. "
+                        End If
+
+                        Dim month As Integer = (buffer(vib.Length + dib.Length + 1) And 15)
+                        Dim monthEffective As String = ""
+                        If month = 15 Then
+                            monthEffective = "Every month. "
+                        End If
+
+                        Dim year1 As Integer = (buffer(vib.Length + dib.Length) And 224) >> 5
+                        Dim year2 As Integer = (buffer(vib.Length + dib.Length + 1) And 240) >> 1
+                        Dim year As Integer = 2000 + year1 + year2
+
+                        Dim calendar As DateTime
+                        If dayEffective = "" And monthEffective = "" Then
+                            calendar = New DateTime(year, month, day, 0, 0, 0)
+                            dataValue = calendar.Date.ToShortDateString
+                            m_dataValueType = DataValueType._Date
+                        Else
+                            calendar = Nothing
+                            dataValue = dayEffective + monthEffective
+                        End If
+
+
                     Else
                         dataValue = CLng(buffer(vib.Length + dib.Length) Or buffer(vib.Length + dib.Length + 1) * 256)
                         If dataValue > 32768 Then
@@ -537,24 +555,26 @@ Public Class vbWmbus
                 Case 4
                     If dateTypeF Then
                         Dim min As Integer = (buffer(vib.Length + dib.Length) And 63)
-                        Dim hour As Integer = (buffer(vib.Length + dib.Length) And 31)
-                        Dim yearh As Integer = ((96 And buffer(vib.Length + dib.Length + 1)) >> 5)
-                        Dim day As Integer = (buffer(vib.Length + dib.Length + 1) And 31)
-                        Dim year1 As Integer = ((224 And buffer(vib.Length + dib.Length + 2)) >> 5)
-                        Dim mon As Integer = (buffer(vib.Length + dib.Length + 2) And 15)
-                        Dim year2 As Integer = ((240 And buffer(vib.Length + dib.Length + 3)) >> 1)
+                        Dim hour As Integer = (buffer(vib.Length + dib.Length + 1) And 31)
+                        Dim day As Integer = (buffer(vib.Length + dib.Length + 2) And 31)
+                        Dim mon As Integer = (buffer(vib.Length + dib.Length + 3) And 15)
 
-                        If (yearh = 0) Then
-                            yearh = 1
+                        Dim yearh As Integer = (buffer(vib.Length + dib.Length + 1) And 96) >> 5
+                        Dim year1 As Integer = (buffer(vib.Length + dib.Length + 2) And 224) >> 5
+                        Dim year2 As Integer = (buffer(vib.Length + dib.Length + 3) And 240) >> 1
+
+                        Dim year As Integer
+                        If yearh = 0 Or mon = 0 Or day = 0 Or hour > 23 Then
+                            MsgBox("Invalid date. Reverting to default.")
+                            calendar = New DateTime(1900, 1, 1, 0, 0, 0)
+                        Else
+                            year = 1900 + 100 * yearh + year1 + year2
+                            calendar = New DateTime(year, mon, day, hour, min, 0)
                         End If
-                        If mon = 0 Or mon = 1 Then mon = 2
-                        If day = 0 Then day = 1
-                        If hour > 23 Then hour = 0
 
-                        Dim year As Integer = 1900 + 100 * yearh + year1 + year2
-                        calendar = New DateTime(year, mon - 1, day, hour, min, 0)
                         dataValue = calendar.TimeOfDay
                         m_dataValueType = DataValueType._Date
+
                     Else
                         dataValue = CLng(buffer(vib.Length + dib.Length) Or
                         (CLng(buffer(vib.Length + dib.Length + 1)) << 8) Or
@@ -743,8 +763,13 @@ Public Class vbWmbus
             Dim DIF = payload(j) And &B1111
             Dim existDIFE As Boolean = False
             Dim existVIFE As Boolean = False
+            Dim existDIFE2 As Boolean = False
+            Dim existVIFE2 As Boolean = False
             If payload(j) > 127 Then
                 existDIFE = True
+                If payload(j + 1) > 127 Then
+                    existDIFE2 = True
+                End If
             End If
 
             Dim DLMS As Boolean = False
@@ -775,16 +800,20 @@ Public Class vbWmbus
                     datafieldLength = 0 'tbd
             End Select
 
-
-            If payload(j + 1) > 127 Then
+            'Il puntatore deve saltare tutti i DIFE (solo 2 implementati ad oggi)
+            If payload(j + 1 + 1 * (-existDIFE) + 1 * (-existDIFE2)) > 127 Then
                 existVIFE = True
+                If payload(j + 2 + 1 * (-existDIFE) + 1 * (-existDIFE2)) > 127 Then
+                    existVIFE2 = True
+                End If
             End If
 
-
             Dim dataBlock As Byte() = {}
-            Dim lunghezzaDaCopiare = datafieldLength + 2 '+1 per DIF +1 per VIF
+            Dim lunghezzaDaCopiare = datafieldLength + 2 'che sono i due obbligatori per DIF e per VIF
             If existDIFE Then lunghezzaDaCopiare += 1
             If existVIFE Then lunghezzaDaCopiare += 1
+            If existDIFE2 Then lunghezzaDaCopiare += 1
+            If existVIFE2 Then lunghezzaDaCopiare += 1
 
             Array.Resize(dataBlock, lunghezzaDaCopiare)
             If j + payloadStart + lunghezzaDaCopiare > buffer.Length Then
@@ -871,15 +900,15 @@ Public Class vbWmbus
     Private Function decodeUserDefinedVif(ByVal buffer() As Byte, ByVal offset As Integer) As Integer
         Dim length As Integer = buffer(offset)
         Dim sb As StringBuilder = New StringBuilder
-        Dim i As Integer = (offset + length)
-        Do While (i > offset)
-            sb.Append(buffer(i).ToString)
-            i = (i - 1)
-        Loop
-
+        Dim i As Integer = (dib.Length + vib.Length)
+        'Do While (i > offset)
+        '    sb.Append(buffer(i).ToString)
+        '    i = (i - 1)
+        'Loop
+        'Routine da scrivere
         m_description = Description.USER_DEFINED
-        userDefinedDescription = sb.ToString
-        Return (length + 1)
+        'userDefinedDescription = sb.ToString
+        Return 0 '(length + 1)
     End Function
     Private Sub decodeMainVif(ByVal vif As Integer)
         m_description = Description.NOT_SUPPORTED
@@ -891,195 +920,206 @@ Public Class vbWmbus
 
     End Sub
     Private Sub decodeMainExtendedVif(ByVal vif As Byte)
-        If ((vif And 127) = 11) Then
-            ' E000 1011
-            m_description = Description.PARAMETER_SET_ID
-        ElseIf ((vif And 127) = 12) Then
-            ' E000 1100
-            m_description = Description.MODEL_VERSION
-        ElseIf ((vif And 127) = 13) Then
-            ' E000 1101
-            m_description = Description.HARDWARE_VERSION
-        ElseIf ((vif And 127) = 14) Then
-            ' E000 1110
-            m_description = Description.FIRMWARE_VERSION
-        ElseIf ((vif And 127) = 15) Then
-            ' E000 1111
-            m_description = Description.OTHER_SOFTWARE_VERSION
-        ElseIf ((vif And 127) = 16) Then
-            ' E001 0000
-            m_description = Description.CUSTOMER_LOCATION
-        ElseIf ((vif And 127) = 17) Then
-            ' E001 0001
-            m_description = Description.CUSTOMER
-        ElseIf ((vif And 127) = 18) Then
-            ' E001 0010
-            m_description = Description.ACCESS_CODE_USER
-        ElseIf ((vif And 127) = 19) Then
-            ' E001 0011
-            m_description = Description.ACCESS_CODE_OPERATOR
-        ElseIf ((vif And 127) = 20) Then
-            ' E001 0100
-            m_description = Description.ACCESS_CODE_SYSTEM_OPERATOR
-        ElseIf ((vif And 127) = 21) Then
-            ' E001 0101
-            m_description = Description.ACCESS_CODE_SYSTEM_DEVELOPER
-        ElseIf ((vif And 127) = 22) Then
-            ' E001 0110
-            m_description = Description.PASSWORD
-        ElseIf ((vif And 127) = 23) Then
-            ' E001 0111
-            m_description = Description.ERROR_FLAGS
-        ElseIf ((vif And 127) = 24) Then
-            ' E001 1000
-            m_description = Description.ERROR_MASK
-        ElseIf ((vif And 127) = 25) Then
-            ' E001 1001
-            m_description = Description.SECURITY_KEY
-        ElseIf ((vif And 127) = 26) Then
-            ' E001 1010
-            m_description = Description.DIGITAL_OUTPUT
-        ElseIf ((vif And 127) = 27) Then
-            ' E001 1011
-            m_description = Description.DIGITAL_INPUT
-        ElseIf ((vif And 127) = 28) Then
-            ' E001 1100
-            m_description = Description.BAUDRATE
-        ElseIf ((vif And 127) = 29) Then
-            ' E001 1101
-            m_description = Description.RESPONSE_DELAY_TIME
-        ElseIf ((vif And 127) = 30) Then
-            ' E001 1110
-            m_description = Description.RETRY
-        ElseIf ((vif And 127) = 31) Then
-            ' E001 1111
-            m_description = Description.REMOTE_CONTROL
-        ElseIf ((vif And 127) = 32) Then
-            ' E010 0000
-            m_description = Description.FIRST_STORAGE_NUMBER_CYCLIC
-        ElseIf ((vif And 127) = 33) Then
-            ' E010 0001
-            m_description = Description.LAST_STORAGE_NUMBER_CYCLIC
-        ElseIf ((vif And 127) = 34) Then
-            ' E010 0010
-            m_description = Description.SIZE_STORAGE_BLOCK
-        ElseIf ((vif And 127) = 35) Then
-            ' E010 0011
-            m_description = Description.RESERVED
-        ElseIf ((vif And 124) = 36) Then
-            ' E010 01nn
-            m_description = Description.STORAGE_INTERVALL
-            unit = timeUnitFor(vif)
-        ElseIf ((vif And 127) = 40) Then
-            ' E010 1000
-            m_description = Description.STORAGE_INTERVALL
-            unit = DlmsUnit.MONTH
-        ElseIf ((vif And 127) = 41) Then
-            ' E010 1001
-            m_description = Description.STORAGE_INTERVALL
-            unit = DlmsUnit.YEAR
-        ElseIf ((vif And 127) = 42) Then
-            ' E010 1010
-            m_description = Description.OPERATOR_SPECIFIC_DATA
-        ElseIf ((vif And 127) = 43) Then
-            ' E010 1011
-            m_description = Description.TIME_POINT
-            unit = DlmsUnit.SECOND
-        ElseIf ((vif And 124) = 44) Then
-            ' E010 11nn
-            m_description = Description.DURATION_LAST_READOUT
-            unit = timeUnitFor(vif)
-        ElseIf ((vif And 124) = 48) Then
-            ' E011 00nn
-            m_description = Description.TARIF_DURATION
-            unit = timeUnitFor(vif)
-        ElseIf ((vif And 124) = 52) Then
-            ' E011 01nn
-            m_description = Description.TARIF_PERIOD
-            unit = timeUnitFor(vif)
-        ElseIf ((vif And 127) = 56) Then
-            ' E011 1000
-            m_description = Description.TARIF_PERIOD
-            unit = DlmsUnit.MONTH
-        ElseIf ((vif And 127) = 57) Then
-            ' E011 1001
-            m_description = Description.TARIF_PERIOD
-            unit = DlmsUnit.YEAR
-        ElseIf ((vif And 112) = 64) Then
-            ' E100 0000
-            m_description = Description.VOLTAGE
-            multiplierExponent = ((vif And 15) - 9)
-            unit = DlmsUnit.VOLT
-        ElseIf ((vif And 112) = 80) Then
-            ' E101 0000
-            m_description = Description.CURRENT
-            multiplierExponent = ((vif And 15) - 12)
-            unit = DlmsUnit.AMPERE
-        ElseIf ((vif And 127) = 96) Then
-            ' E110 0000
-            m_description = Description.RESET_COUNTER
-        ElseIf ((vif And 127) = 97) Then
-            ' E110 0001
-            m_description = Description.CUMULATION_COUNTER
-        ElseIf ((vif And 127) = 98) Then
-            ' E110 0010
-            m_description = Description.CONTROL_SIGNAL
-        ElseIf ((vif And 127) = 99) Then
-            ' E110 0011
-            m_description = Description.DAY_OF_WEEK
-            ' 1 = Monday; 7 = Sunday; 0 = all Days
-        ElseIf ((vif And 127) = 100) Then
-            ' E110 0100
-            m_description = Description.WEEK_NUMBER
-        ElseIf ((vif And 127) = 101) Then
-            ' E110 0101
-            m_description = Description.TIME_POINT_DAY_CHANGE
-        ElseIf ((vif And 127) = 102) Then
-            ' E110 0110
-            m_description = Description.PARAMETER_ACTIVATION_STATE
-        ElseIf ((vif And 127) = 103) Then
-            ' E110 0111
-            m_description = Description.SPECIAL_SUPPLIER_INFORMATION
-        ElseIf ((vif And 124) = 104) Then
-            ' E110 10nn
-            m_description = Description.LAST_CUMULATION_DURATION
-            unit = unitBiggerFor(vif)
-        ElseIf ((vif And 124) = 108) Then
-            ' E110 11nn
-            m_description = Description.OPERATING_TIME_BATTERY
-            unit = unitBiggerFor(vif)
-        ElseIf ((vif And 127) = 112) Then
-            ' E111 0000
-            m_description = Description.NOT_SUPPORTED
-            ' TODO: BATTERY_CHANGE_DATE_TIME
-        ElseIf ((vif And 127) = 113) Then
-            ' E111 0001
-            m_description = Description.RF_LEVEL
-            unit = DlmsUnit.SIGNAL_STRENGTH
-        ElseIf ((vif And 127) = 114) Then
-            ' E111 0010
-            m_description = Description.NOT_SUPPORTED
-            ' TODO: DAYLIGHT_SAVING (begin, ending, deviation)
-        ElseIf ((vif And 127) = 115) Then
-            ' E111 0011
-            m_description = Description.NOT_SUPPORTED
-            ' TODO: Listening window management data type L
-        ElseIf ((vif And 127) = 116) Then
-            ' E111 0100
-            m_description = Description.REMAINING_BATTERY_LIFE_TIME
-            unit = DlmsUnit.DAY
-        ElseIf ((vif And 127) = 117) Then
-            ' E111 0101
-            m_description = Description.NUMBER_STOPS
-        ElseIf ((vif And 127) = 118) Then
-            ' E111 0110
-            m_description = Description.MANUFACTURER_SPECIFIC
-        ElseIf ((vif And 127) >= 119) Then
-            ' E111 0111 - E111 1111
-            m_description = Description.RESERVED
-        Else
-            m_description = Description.NOT_SUPPORTED
-        End If
+        Select Case (vif And 127)
+            Case 11
+                ' E000 1011
+                m_description = Description.PARAMETER_SET_ID
+            Case 12
+                ' E000 1100
+                m_description = Description.MODEL_VERSION
+                Case 13
+                ' E000 1101
+                m_description = Description.HARDWARE_VERSION
+                Case 14
+                ' E000 1110
+                m_description = Description.FIRMWARE_VERSION
+                Case 15
+                ' E000 1111
+                m_description = Description.OTHER_SOFTWARE_VERSION
+                Case 16
+                ' E001 0000
+                m_description = Description.CUSTOMER_LOCATION
+                Case 17
+                ' E001 0001
+                m_description = Description.CUSTOMER
+                Case 18
+                ' E001 0010
+                m_description = Description.ACCESS_CODE_USER
+                Case 19
+                ' E001 0011
+                m_description = Description.ACCESS_CODE_OPERATOR
+                Case 20
+                ' E001 0100
+                m_description = Description.ACCESS_CODE_SYSTEM_OPERATOR
+                Case 21
+                ' E001 0101
+                m_description = Description.ACCESS_CODE_SYSTEM_DEVELOPER
+                Case 22
+                ' E001 0110
+                m_description = Description.PASSWORD
+                Case 23
+                ' E001 0111
+                m_description = Description.ERROR_FLAGS
+                Case 24
+                ' E001 1000
+                m_description = Description.ERROR_MASK
+                Case 25
+                ' E001 1001
+                m_description = Description.SECURITY_KEY
+                Case 26
+                ' E001 1010
+                m_description = Description.DIGITAL_OUTPUT
+                Case 27
+                ' E001 1011
+                m_description = Description.DIGITAL_INPUT
+                Case 28
+                ' E001 1100
+                m_description = Description.BAUDRATE
+                Case 29
+                ' E001 1101
+                m_description = Description.RESPONSE_DELAY_TIME
+                Case 30
+                ' E001 1110
+                m_description = Description.RETRY
+                Case 31
+                ' E001 1111
+                m_description = Description.REMOTE_CONTROL
+                Case 32
+                ' E010 0000
+                m_description = Description.FIRST_STORAGE_NUMBER_CYCLIC
+                Case 33
+                ' E010 0001
+                m_description = Description.LAST_STORAGE_NUMBER_CYCLIC
+                Case 34
+                ' E010 0010
+                m_description = Description.SIZE_STORAGE_BLOCK
+                Case 35
+                ' E010 0011
+                m_description = Description.RESERVED
+            Case 40
+                ' E010 1000
+                m_description = Description.STORAGE_INTERVALL
+                unit = DlmsUnit.MONTH
+                Case 41
+                ' E010 1001
+                m_description = Description.STORAGE_INTERVALL
+                unit = DlmsUnit.YEAR
+                Case 42
+                ' E010 1010
+                m_description = Description.OPERATOR_SPECIFIC_DATA
+                Case 43
+                ' E010 1011
+                m_description = Description.TIME_POINT
+                unit = DlmsUnit.SECOND
+            Case 56
+                ' E011 1000
+                m_description = Description.TARIF_PERIOD
+                unit = DlmsUnit.MONTH
+                Case 57
+                ' E011 1001
+                m_description = Description.TARIF_PERIOD
+                unit = DlmsUnit.YEAR
+            Case 96
+                ' E110 0000
+                m_description = Description.RESET_COUNTER
+            Case 97
+                ' E110 0001
+                m_description = Description.CUMULATION_COUNTER
+            Case 98
+                ' E110 0010
+                m_description = Description.CONTROL_SIGNAL
+            Case 99
+                ' E110 0011
+                m_description = Description.DAY_OF_WEEK
+                ' 1 = Monday; 7 = Sunday; 0 = all Days
+            Case 100
+                ' E110 0100
+                m_description = Description.WEEK_NUMBER
+            Case 101
+                ' E110 0101
+                m_description = Description.TIME_POINT_DAY_CHANGE
+            Case 102
+                ' E110 0110
+                m_description = Description.PARAMETER_ACTIVATION_STATE
+            Case 103
+                ' E110 0111
+                m_description = Description.SPECIAL_SUPPLIER_INFORMATION
+            Case 112
+                ' E111 0000
+                m_description = Description.NOT_SUPPORTED
+                ' TODO: BATTERY_CHANGE_DATE_TIME
+            Case 113
+                ' E111 0001
+                m_description = Description.RF_LEVEL
+                unit = DlmsUnit.SIGNAL_STRENGTH
+            Case 114
+                ' E111 0010
+                m_description = Description.NOT_SUPPORTED
+                ' TODO: DAYLIGHT_SAVING (begin, ending, deviation)
+            Case 115
+                ' E111 0011
+                m_description = Description.NOT_SUPPORTED
+                ' TODO: Listening window management data type L
+            Case 116
+                ' E111 0100
+                m_description = Description.REMAINING_BATTERY_LIFE_TIME
+                unit = DlmsUnit.DAY
+            Case 117
+                ' E111 0101
+                m_description = Description.NUMBER_STOPS
+            Case 118
+                ' E111 0110
+                m_description = Description.MANUFACTURER_SPECIFIC
+                'Case 119 To 127
+                '    ' E111 0111 - E111 1111
+                '    m_description = Description.RESERVED
+            Case Else
+                If (vif And 124) = 104 Then
+                    ' E110 10nn
+                    m_description = Description.LAST_CUMULATION_DURATION
+                    unit = unitBiggerFor(vif)
+                ElseIf (vif And 124) = 124 Then
+                    ' Trucco per decodificare i telegrammi 01FD17 di Engelmann Maddalena
+                    m_description = Description.ERROR_MASK
+                ElseIf (vif And 124) = 108 Then
+                    ' E110 11nn
+                    m_description = Description.OPERATING_TIME_BATTERY
+                    unit = unitBiggerFor(vif)
+                ElseIf (vif And 112) = 64 Then
+                    ' E100 0000
+                    m_description = Description.VOLTAGE
+                    multiplierExponent = ((vif And 15) - 9)
+                    unit = DlmsUnit.VOLT
+                ElseIf (vif And 112) = 80 Then
+                    ' E101 0000
+                    m_description = Description.CURRENT
+                    multiplierExponent = ((vif And 15) - 12)
+                    unit = DlmsUnit.AMPERE
+                ElseIf (vif And 124) = 44 Then
+                    ' E010 11nn
+                    m_description = Description.DURATION_LAST_READOUT
+                    unit = timeUnitFor(vif)
+                ElseIf (vif And 124) = 48 Then
+                    ' E011 00nn
+                    m_description = Description.TARIF_DURATION
+                    unit = timeUnitFor(vif)
+                ElseIf (vif And 124) = 52 Then
+                    ' E011 01nn
+                    m_description = Description.TARIF_PERIOD
+                    unit = timeUnitFor(vif)
+                ElseIf (vif And 124) = 36 Then
+                    ' E010 01nn
+                    m_description = Description.STORAGE_INTERVALL
+                    unit = timeUnitFor(vif)
+                Else
+                    m_description = Description.NONE
+                End If
+
+        End Select
+
+
+
+
     End Sub
     Private Sub decodeAlternateExtendedVif(ByVal vif As Byte)
         m_description = Description.NOT_SUPPORTED
@@ -1414,17 +1454,17 @@ Public Class vbWmbus
     End Sub
     Private Sub decodeDib(ByVal buffer() As Byte, ByVal i As Integer)
 
-        Dim ff As Integer = (buffer(i) And 48) >> 4
+        Dim ff As Integer = (buffer(i) And 48) >> 4  'La funzione verifica il 5 e 6 bit
         Select Case ff
-            Case 0
+            Case 0  '&B00
                 m_functionField = FunctionField.Valore_Istantaneo
-            Case 1
+            Case 1  '&B01
                 m_functionField = FunctionField.Valore_Massimo
-            Case 2
+            Case 2  '&B10
                 m_functionField = FunctionField.Valore_Minimo
-            Case 3
+            Case 3  '&B11
                 m_functionField = FunctionField.Valore_Errore
-            Case Else
+            Case Else  'impossibile
                 m_functionField = Nothing
         End Select
 
