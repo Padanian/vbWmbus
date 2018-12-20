@@ -765,10 +765,36 @@ Public Class vbWmbus
             Dim existVIFE As Boolean = False
             Dim existDIFE2 As Boolean = False
             Dim existVIFE2 As Boolean = False
+            Dim existDIFE3 As Boolean = False
+            Dim existVIFE3 As Boolean = False
+            Dim existDIFE4 As Boolean = False
+            Dim existVIFE4 As Boolean = False
+            Dim existDIFE5 As Boolean = False
+            Dim existVIFE5 As Boolean = False
+            Dim existDIFE6 As Boolean = False
+            Dim existVIFE6 As Boolean = False
+            Dim existDIFE7 As Boolean = False
+            Dim existVIFE7 As Boolean = False
+
             If payload(j) > 127 Then
                 existDIFE = True
                 If payload(j + 1) > 127 Then
                     existDIFE2 = True
+                    If payload(j + 2) > 127 Then
+                        existDIFE3 = True
+                        If payload(j + 3) > 127 Then
+                            existDIFE4 = True
+                            If payload(j + 4) > 127 Then
+                                existDIFE5 = True
+                                If payload(j + 5) > 127 Then
+                                    existDIFE6 = True
+                                    If payload(j + 6) > 127 Then
+                                        existDIFE7 = True
+                                    End If
+                                End If
+                            End If
+                        End If
+                    End If
                 End If
             End If
 
@@ -801,10 +827,25 @@ Public Class vbWmbus
             End Select
 
             'Il puntatore deve saltare tutti i DIFE (solo 2 implementati ad oggi)
-            If payload(j + 1 + 1 * (-existDIFE) + 1 * (-existDIFE2)) > 127 Then
+            If payload(j + 1 + 1 * (-existDIFE) + 1 * (-existDIFE2) + 1 * (-existDIFE3) + 1 * (-existDIFE4) + 1 * (-existDIFE5) + 1 * (-existDIFE6) + 1 * (-existDIFE7)) > 127 Then
                 existVIFE = True
-                If payload(j + 2 + 1 * (-existDIFE) + 1 * (-existDIFE2)) > 127 Then
+                If payload(j + 2 + 1 * (-existDIFE) + 1 * (-existDIFE2) + 1 * (-existDIFE3) + 1 * (-existDIFE4) + 1 * (-existDIFE5) + 1 * (-existDIFE6) + 1 * (-existDIFE7)) > 127 Then
                     existVIFE2 = True
+                    If payload(j + 3 + 1 * (-existDIFE) + 1 * (-existDIFE2) + 1 * (-existDIFE3) + 1 * (-existDIFE4) + 1 * (-existDIFE5) + 1 * (-existDIFE6) + 1 * (-existDIFE7)) > 127 Then
+                        existVIFE3 = True
+                        If payload(j + 4 + 1 * (-existDIFE) + 1 * (-existDIFE2) + 1 * (-existDIFE3) + 1 * (-existDIFE4) + 1 * (-existDIFE5) + 1 * (-existDIFE6) + 1 * (-existDIFE7)) > 127 Then
+                            existVIFE4 = True
+                            If payload(j + 5 + 1 * (-existDIFE) + 1 * (-existDIFE2) + 1 * (-existDIFE3) + 1 * (-existDIFE4) + 1 * (-existDIFE5) + 1 * (-existDIFE6) + 1 * (-existDIFE7)) > 127 Then
+                                existVIFE5 = True
+                                If payload(j + 6 + 1 * (-existDIFE) + 1 * (-existDIFE2) + 1 * (-existDIFE3) + 1 * (-existDIFE4) + 1 * (-existDIFE5) + 1 * (-existDIFE6) + 1 * (-existDIFE7)) > 127 Then
+                                    existVIFE6 = True
+                                    If payload(j + 7 + 1 * (-existDIFE) + 1 * (-existDIFE2) + 1 * (-existDIFE3) + 1 * (-existDIFE4) + 1 * (-existDIFE5) + 1 * (-existDIFE6) + 1 * (-existDIFE7)) > 127 Then
+                                        existVIFE7 = True
+                                    End If
+                                End If
+                            End If
+                        End If
+                    End If
                 End If
             End If
 
@@ -814,6 +855,16 @@ Public Class vbWmbus
             If existVIFE Then lunghezzaDaCopiare += 1
             If existDIFE2 Then lunghezzaDaCopiare += 1
             If existVIFE2 Then lunghezzaDaCopiare += 1
+            If existDIFE3 Then lunghezzaDaCopiare += 1
+            If existVIFE3 Then lunghezzaDaCopiare += 1
+            If existDIFE4 Then lunghezzaDaCopiare += 1
+            If existVIFE4 Then lunghezzaDaCopiare += 1
+            If existDIFE5 Then lunghezzaDaCopiare += 1
+            If existVIFE5 Then lunghezzaDaCopiare += 1
+            If existDIFE6 Then lunghezzaDaCopiare += 1
+            If existVIFE6 Then lunghezzaDaCopiare += 1
+            If existDIFE7 Then lunghezzaDaCopiare += 1
+            If existVIFE7 Then lunghezzaDaCopiare += 1
 
             Array.Resize(dataBlock, lunghezzaDaCopiare)
             If j + payloadStart + lunghezzaDaCopiare > buffer.Length Then
