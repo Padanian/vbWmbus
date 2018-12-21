@@ -357,8 +357,8 @@ Public Class vbWmbus
     Private subunit As Long
     Private dataLength As Integer
     Private storageNumber As Long
-    Dim calendar As DateTime
     Dim DecodedData As New DecodedDeviceClass
+    Dim calendar As DateTime
     Private manufacturerId As String
     Private manufacturerDetails As String
     Private deviceId As String
@@ -400,6 +400,7 @@ Public Class vbWmbus
         '2434 = Maddalena
         'C514 = Engelmann
 
+        DecodedData = New DecodedDeviceClass
 
         Dim i As Integer = 0
         Dim buffer As Byte() = {}
@@ -413,15 +414,16 @@ Public Class vbWmbus
         decodePreamble(buffer)
 
         'ricerca del marker AES (se non trovato = criptato)
-        Dim found1 As Boolean = InStr(telegramma, "2F2F")
+        Dim found1 As Boolean = InStr(telegramma.ToUpper, "2F2F")
         Dim frame_type As String = telegramma.Substring(32, 2)
 
 
         'Decodifica il frame criptato
         If Not found1 And manufacturerId = "MAD" Then
             telegramma = DecodeAES(telegramma)
+            If telegramma = "" Then Return nothing
         ElseIf Not found1 And Not manufacturerId = "MAD" Then
-            MsgBox("Encrypted telegram, unknown AES key")
+            MsgBox("Device produced by " & manufacturerDetails & ". Encrypted telegram, unknown AES key")
             Return Nothing
         End If
         If Not found1 And (frame_type = FRAME_A_SHORT Or frame_type = FRAME_B) Then
@@ -432,6 +434,7 @@ Public Class vbWmbus
 
         'Se era criptato, ricrea il buffer questa volta decriptato
         For j = 0 To telegramma.Length - 1 Step 2
+            Array.Resize(buffer, buffer.Length + 1)
             buffer(j / 2) = Convert.ToInt16(Strings.Mid(telegramma, j + 1, 2), 16)
         Next
 
@@ -449,7 +452,13 @@ Public Class vbWmbus
             Dim dataField As Integer = buffer(0) And &B1111
             'If dataField = 11 Or dataField = 66 Then dataField = 3
             dataLength = dataField
-            storageNumber = (buffer(0) And &B1000000) >> 6
+            If buffer(0) > 127 Then
+                storageNumber = (buffer(1) And &B1111) + ((buffer(0) And &B1000000) >> 6)
+                dib = {buffer(0), buffer(1)}
+            Else
+                storageNumber = (buffer(0) And &B1000000) >> 6
+                dib = {buffer(0)}
+            End If
 
             subunit = 0
             tariff = 0
@@ -467,9 +476,8 @@ Public Class vbWmbus
             unit = 0
             multiplierExponent = 0
 
-            dib = {buffer(0)}
 
-            Dim vif As Integer = buffer(1)
+            Dim vif As Integer = buffer(dib.Length)
             Dim decodeFurtherVifs As Boolean = False
 
             If (vif = 251) Then
@@ -626,6 +634,7 @@ Public Class vbWmbus
                 Case 14
                     i = setBCD(buffer, vib.Length + dib.Length, 6)
                 Case 13
+                    'Exit Select
                     Dim variableLength As Integer = buffer(vib.Length + dib.Length + 1)
                     Dim dataLength0x0d As Integer
                     If variableLength < 192 Then
@@ -663,29 +672,29 @@ Public Class vbWmbus
                 DataX = Format(dataValue * 10 ^ multiplierExponent, "###0.##")
             ElseIf TypeOf (dataValue) Is Byte() Then
                 If dataValue.length = 1 Then
-                    Dim temp As Integer
-                    Integer.TryParse(Hex(dataValue(0)), temp)
-                    DataX = Format(temp * 10 ^ multiplierExponent, "###0.##")
-                ElseIf dataValue.length = 2 Then
-                    Dim temp As Integer
-                    Integer.TryParse(Hex(dataValue(1)) & Hex(dataValue(0)), temp)
-                    DataX = Format(temp * 10 ^ multiplierExponent, "###0.##")
-                ElseIf dataValue.length = 3 Then
-                    Dim temp As Integer
-                    Integer.TryParse(Hex(dataValue(2)) & Hex(dataValue(1)) & Hex(dataValue(0)), temp)
-                    DataX = Format(temp * 10 ^ multiplierExponent, "###0.##")
-                ElseIf dataValue.length = 4 Then
-                    Dim temp As Integer
-                    Integer.TryParse(Hex(dataValue(3)) & Hex(dataValue(2)) & Hex(dataValue(1)) & Hex(dataValue(0)), temp)
-                    DataX = Format(temp * 10 ^ multiplierExponent, "###0.##")
-                ElseIf dataValue.length = 6 Then
-                    Dim temp As Integer
-                    Integer.TryParse(Hex(dataValue(5)) & Hex(dataValue(4)) & Hex(dataValue(3)) & Hex(dataValue(2)) & Hex(dataValue(1)) & Hex(dataValue(0)), temp)
-                    DataX = Format(temp * 10 ^ multiplierExponent, "###0.##")
+                        Dim temp As Integer
+                        Integer.TryParse(Hex(dataValue(0)), temp)
+                        DataX = Format(temp * 10 ^ multiplierExponent, "###0.##")
+                    ElseIf dataValue.length = 2 Then
+                        Dim temp As Integer
+                        Integer.TryParse(Hex(dataValue(1)) & Hex(dataValue(0)), temp)
+                        DataX = Format(temp * 10 ^ multiplierExponent, "###0.##")
+                    ElseIf dataValue.length = 3 Then
+                        Dim temp As Integer
+                        Integer.TryParse(Hex(dataValue(2)) & Hex(dataValue(1)) & Hex(dataValue(0)), temp)
+                        DataX = Format(temp * 10 ^ multiplierExponent, "###0.##")
+                    ElseIf dataValue.length = 4 Then
+                        Dim temp As Integer
+                        Integer.TryParse(Hex(dataValue(3)) & Hex(dataValue(2)) & Hex(dataValue(1)) & Hex(dataValue(0)), temp)
+                        DataX = Format(temp * 10 ^ multiplierExponent, "###0.##")
+                    ElseIf dataValue.length = 6 Then
+                        Dim temp As Integer
+                        Integer.TryParse(Hex(dataValue(5)) & Hex(dataValue(4)) & Hex(dataValue(3)) & Hex(dataValue(2)) & Hex(dataValue(1)) & Hex(dataValue(0)), temp)
+                        DataX = Format(temp * 10 ^ multiplierExponent, "###0.##")
 
-                End If
-            Else
-                DataX = dataValue.ToString
+                    End If
+                Else
+                    DataX = dataValue.ToString
             End If
             If TypeOf (dataValue) Is TimeSpan Then
                 DataX = calendar.ToString
@@ -713,11 +722,15 @@ Public Class vbWmbus
 
             DecodedData.DecodedDataField(DecodedData.DecodedDataField.Length - 1).datavalue = dataValue
             DecodedData.DecodedDataField(DecodedData.DecodedDataField.Length - 1).datavalueSimplified = DataX
-            DecodedData.DecodedDataField(DecodedData.DecodedDataField.Length - 1).multiplierexponent = multiplierExponent
             DecodedData.DecodedDataField(DecodedData.DecodedDataField.Length - 1).m_datavaluetype = [Enum].GetName(GetType(DataValueType), m_dataValueType)
             DecodedData.DecodedDataField(DecodedData.DecodedDataField.Length - 1).m_description = [Enum].GetName(GetType(Description), m_description)
             DecodedData.DecodedDataField(DecodedData.DecodedDataField.Length - 1).m_functionField = [Enum].GetName(GetType(FunctionField), m_functionField)
-            DecodedData.DecodedDataField(DecodedData.DecodedDataField.Length - 1).storagenumber = [Enum].GetName(GetType(StorageIntervalDescription), storageNumber)
+
+
+            DecodedData.DecodedDataField(DecodedData.DecodedDataField.Length - 1).multiplierexponent = multiplierExponent
+            DecodedData.DecodedDataField(DecodedData.DecodedDataField.Length - 1).storagenumber = storageNumber
+
+
             DecodedData.DecodedDataField(DecodedData.DecodedDataField.Length - 1).subunit = [Enum].GetName(GetType(SubunitDescription), subunit)
             DecodedData.DecodedDataField(DecodedData.DecodedDataField.Length - 1).tariff = [Enum].GetName(GetType(TariffDescription), tariff)
             DecodedData.DecodedDataField(DecodedData.DecodedDataField.Length - 1).unitDescription = [Enum].GetName(GetType(DlmsUnit), unit)
@@ -761,120 +774,128 @@ Public Class vbWmbus
 
         For j = 0 To payload.Length - 2
             Dim DIF = payload(j) And &B1111
-            Dim existDIFE As Boolean = False
-            Dim existVIFE As Boolean = False
-            Dim existDIFE2 As Boolean = False
-            Dim existVIFE2 As Boolean = False
-            Dim existDIFE3 As Boolean = False
-            Dim existVIFE3 As Boolean = False
-            Dim existDIFE4 As Boolean = False
-            Dim existVIFE4 As Boolean = False
-            Dim existDIFE5 As Boolean = False
-            Dim existVIFE5 As Boolean = False
-            Dim existDIFE6 As Boolean = False
-            Dim existVIFE6 As Boolean = False
-            Dim existDIFE7 As Boolean = False
-            Dim existVIFE7 As Boolean = False
+            If Not DIF = 0 Then
 
-            If payload(j) > 127 Then
-                existDIFE = True
-                If payload(j + 1) > 127 Then
-                    existDIFE2 = True
-                    If payload(j + 2) > 127 Then
-                        existDIFE3 = True
-                        If payload(j + 3) > 127 Then
-                            existDIFE4 = True
-                            If payload(j + 4) > 127 Then
-                                existDIFE5 = True
-                                If payload(j + 5) > 127 Then
-                                    existDIFE6 = True
-                                    If payload(j + 6) > 127 Then
-                                        existDIFE7 = True
+                Dim existDIFE As Boolean = False
+                Dim existVIFE As Boolean = False
+                Dim existDIFE2 As Boolean = False
+                Dim existVIFE2 As Boolean = False
+                Dim existDIFE3 As Boolean = False
+                Dim existVIFE3 As Boolean = False
+                Dim existDIFE4 As Boolean = False
+                Dim existVIFE4 As Boolean = False
+                Dim existDIFE5 As Boolean = False
+                Dim existVIFE5 As Boolean = False
+                Dim existDIFE6 As Boolean = False
+                Dim existVIFE6 As Boolean = False
+                Dim existDIFE7 As Boolean = False
+                Dim existVIFE7 As Boolean = False
+
+                If payload(j) > 127 Then
+                    existDIFE = True
+                    If payload(j + 1) > 127 Then
+                        existDIFE2 = True
+                        If payload(j + 2) > 127 Then
+                            existDIFE3 = True
+                            If payload(j + 3) > 127 Then
+                                existDIFE4 = True
+                                If payload(j + 4) > 127 Then
+                                    existDIFE5 = True
+                                    If payload(j + 5) > 127 Then
+                                        existDIFE6 = True
+                                        If payload(j + 6) > 127 Then
+                                            existDIFE7 = True
+                                        End If
                                     End If
                                 End If
                             End If
                         End If
                     End If
                 End If
-            End If
 
-            Dim DLMS As Boolean = False
-            Dim datafieldLength As Integer = 0
-            Select Case DIF
-                Case 0 To 6
-                    datafieldLength = DIF
-                Case 7
-                    datafieldLength = 8
-                Case 8
-                    If payload(j + 1) = &H7A Then 'selection for readout
-                        DLMS = True
+                Dim DLMS As Boolean = False
+                Dim datafieldLength As Integer = 0
+                Select Case DIF
+                    Case 0 To 6
+                        datafieldLength = DIF
+                    Case 7
+                        datafieldLength = 8
+                    Case 8
+                        If payload(j + 1) = &H7A Then 'selection for readout
+                            DLMS = True
+                            datafieldLength = 4
+                        End If
+                    Case 9
+                        datafieldLength = 1
+                    Case 10
+                        datafieldLength = 2
+                    Case 11
+                        datafieldLength = 3
+                    Case 12
                         datafieldLength = 4
-                    End If
-                Case 9
-                    datafieldLength = 1
-                Case 10
-                    datafieldLength = 2
-                Case 11
-                    datafieldLength = 3
-                Case 12
-                    datafieldLength = 4
-                Case 13
-                    datafieldLength = 0'tbd
-                Case 14
-                    datafieldLength = 6
-                Case 15
-                    datafieldLength = 0 'tbd
-            End Select
+                    Case 13
+                        datafieldLength = 0'tbd
+                    Case 14
+                        datafieldLength = 6
+                    Case 15
+                        datafieldLength = 0 'tbd
+                End Select
 
-            'Il puntatore deve saltare tutti i DIFE (solo 2 implementati ad oggi)
-            If payload(j + 1 + 1 * (-existDIFE) + 1 * (-existDIFE2) + 1 * (-existDIFE3) + 1 * (-existDIFE4) + 1 * (-existDIFE5) + 1 * (-existDIFE6) + 1 * (-existDIFE7)) > 127 Then
-                existVIFE = True
-                If payload(j + 2 + 1 * (-existDIFE) + 1 * (-existDIFE2) + 1 * (-existDIFE3) + 1 * (-existDIFE4) + 1 * (-existDIFE5) + 1 * (-existDIFE6) + 1 * (-existDIFE7)) > 127 Then
-                    existVIFE2 = True
-                    If payload(j + 3 + 1 * (-existDIFE) + 1 * (-existDIFE2) + 1 * (-existDIFE3) + 1 * (-existDIFE4) + 1 * (-existDIFE5) + 1 * (-existDIFE6) + 1 * (-existDIFE7)) > 127 Then
-                        existVIFE3 = True
-                        If payload(j + 4 + 1 * (-existDIFE) + 1 * (-existDIFE2) + 1 * (-existDIFE3) + 1 * (-existDIFE4) + 1 * (-existDIFE5) + 1 * (-existDIFE6) + 1 * (-existDIFE7)) > 127 Then
-                            existVIFE4 = True
-                            If payload(j + 5 + 1 * (-existDIFE) + 1 * (-existDIFE2) + 1 * (-existDIFE3) + 1 * (-existDIFE4) + 1 * (-existDIFE5) + 1 * (-existDIFE6) + 1 * (-existDIFE7)) > 127 Then
-                                existVIFE5 = True
-                                If payload(j + 6 + 1 * (-existDIFE) + 1 * (-existDIFE2) + 1 * (-existDIFE3) + 1 * (-existDIFE4) + 1 * (-existDIFE5) + 1 * (-existDIFE6) + 1 * (-existDIFE7)) > 127 Then
-                                    existVIFE6 = True
-                                    If payload(j + 7 + 1 * (-existDIFE) + 1 * (-existDIFE2) + 1 * (-existDIFE3) + 1 * (-existDIFE4) + 1 * (-existDIFE5) + 1 * (-existDIFE6) + 1 * (-existDIFE7)) > 127 Then
-                                        existVIFE7 = True
+                'Il puntatore deve saltare tutti i DIFE (solo 2 implementati ad oggi)
+                If payload(j + 1 + 1 * (-existDIFE) + 1 * (-existDIFE2) + 1 * (-existDIFE3) + 1 * (-existDIFE4) + 1 * (-existDIFE5) + 1 * (-existDIFE6) + 1 * (-existDIFE7)) > 127 Then
+                    existVIFE = True
+                    If payload(j + 2 + 1 * (-existDIFE) + 1 * (-existDIFE2) + 1 * (-existDIFE3) + 1 * (-existDIFE4) + 1 * (-existDIFE5) + 1 * (-existDIFE6) + 1 * (-existDIFE7)) > 127 Then
+                        existVIFE2 = True
+                        If payload(j + 3 + 1 * (-existDIFE) + 1 * (-existDIFE2) + 1 * (-existDIFE3) + 1 * (-existDIFE4) + 1 * (-existDIFE5) + 1 * (-existDIFE6) + 1 * (-existDIFE7)) > 127 Then
+                            existVIFE3 = True
+                            If payload(j + 4 + 1 * (-existDIFE) + 1 * (-existDIFE2) + 1 * (-existDIFE3) + 1 * (-existDIFE4) + 1 * (-existDIFE5) + 1 * (-existDIFE6) + 1 * (-existDIFE7)) > 127 Then
+                                existVIFE4 = True
+                                If payload(j + 5 + 1 * (-existDIFE) + 1 * (-existDIFE2) + 1 * (-existDIFE3) + 1 * (-existDIFE4) + 1 * (-existDIFE5) + 1 * (-existDIFE6) + 1 * (-existDIFE7)) > 127 Then
+                                    existVIFE5 = True
+                                    If payload(j + 6 + 1 * (-existDIFE) + 1 * (-existDIFE2) + 1 * (-existDIFE3) + 1 * (-existDIFE4) + 1 * (-existDIFE5) + 1 * (-existDIFE6) + 1 * (-existDIFE7)) > 127 Then
+                                        existVIFE6 = True
+                                        If payload(j + 7 + 1 * (-existDIFE) + 1 * (-existDIFE2) + 1 * (-existDIFE3) + 1 * (-existDIFE4) + 1 * (-existDIFE5) + 1 * (-existDIFE6) + 1 * (-existDIFE7)) > 127 Then
+                                            existVIFE7 = True
+                                        End If
                                     End If
                                 End If
                             End If
                         End If
                     End If
                 End If
+
+                Dim dataBlock As Byte() = {}
+                Dim lunghezzaDaCopiare = datafieldLength + 2 'che sono i due obbligatori per DIF e per VIF
+                If existDIFE Then lunghezzaDaCopiare += 1
+                If existVIFE Then lunghezzaDaCopiare += 1
+                If existDIFE2 Then lunghezzaDaCopiare += 1
+                If existVIFE2 Then lunghezzaDaCopiare += 1
+                If existDIFE3 Then lunghezzaDaCopiare += 1
+                If existVIFE3 Then lunghezzaDaCopiare += 1
+                If existDIFE4 Then lunghezzaDaCopiare += 1
+                If existVIFE4 Then lunghezzaDaCopiare += 1
+                If existDIFE5 Then lunghezzaDaCopiare += 1
+                If existVIFE5 Then lunghezzaDaCopiare += 1
+                If existDIFE6 Then lunghezzaDaCopiare += 1
+                If existVIFE6 Then lunghezzaDaCopiare += 1
+                If existDIFE7 Then lunghezzaDaCopiare += 1
+                If existVIFE7 Then lunghezzaDaCopiare += 1
+
+                Array.Resize(dataBlock, lunghezzaDaCopiare)
+                If j + payloadStart + lunghezzaDaCopiare > buffer.Length Then
+                    Exit For
+                End If
+                Array.Copy(buffer, j + payloadStart, dataBlock, 0, lunghezzaDaCopiare)
+
+                If dataBlock.SequenceEqual({47, 47}) Then
+                    Return bufferSpacchettato
+                End If
+
+                Array.Resize(bufferSpacchettato, bufferSpacchettato.Length + 1)
+                bufferSpacchettato(bufferSpacchettato.Length - 1) = dataBlock
+                j = j + lunghezzaDaCopiare - 1
+
             End If
-
-            Dim dataBlock As Byte() = {}
-            Dim lunghezzaDaCopiare = datafieldLength + 2 'che sono i due obbligatori per DIF e per VIF
-            If existDIFE Then lunghezzaDaCopiare += 1
-            If existVIFE Then lunghezzaDaCopiare += 1
-            If existDIFE2 Then lunghezzaDaCopiare += 1
-            If existVIFE2 Then lunghezzaDaCopiare += 1
-            If existDIFE3 Then lunghezzaDaCopiare += 1
-            If existVIFE3 Then lunghezzaDaCopiare += 1
-            If existDIFE4 Then lunghezzaDaCopiare += 1
-            If existVIFE4 Then lunghezzaDaCopiare += 1
-            If existDIFE5 Then lunghezzaDaCopiare += 1
-            If existVIFE5 Then lunghezzaDaCopiare += 1
-            If existDIFE6 Then lunghezzaDaCopiare += 1
-            If existVIFE6 Then lunghezzaDaCopiare += 1
-            If existDIFE7 Then lunghezzaDaCopiare += 1
-            If existVIFE7 Then lunghezzaDaCopiare += 1
-
-            Array.Resize(dataBlock, lunghezzaDaCopiare)
-            If j + payloadStart + lunghezzaDaCopiare > buffer.Length Then
-                Exit For
-            End If
-            Array.Copy(buffer, j + payloadStart, dataBlock, 0, lunghezzaDaCopiare)
-
-            Array.Resize(bufferSpacchettato, bufferSpacchettato.Length + 1)
-            bufferSpacchettato(bufferSpacchettato.Length - 1) = dataBlock
-            j = j + lunghezzaDaCopiare - 1
         Next
 
 
@@ -889,8 +910,8 @@ Public Class vbWmbus
             deviceId = decodeDeviceId(bais)
             manufacturerId = decodeManufacturerId(bais)
             manufacturerDetails = selectManufacturerDetailsClass.selectManufacturerDetails(manufacturerId)
-            version = (bais(8) And 255)
-            deviceTypeID = [Enum].GetName(GetType(DeviceType), bais(9) And 255)
+            version = bais(8)
+            deviceTypeID = [Enum].GetName(GetType(DeviceType), bais(9))
             accessNumber = bais(10)
             status = decodeStatusType(bais(11))
             signature = Hex(bais(12)).ToString.PadLeft(2, "0") & Hex(bais(13)).ToString.PadLeft(2, "0")
@@ -1840,10 +1861,16 @@ Public Class vbWmbus
 
     End Sub
     Private Function CopyofRange(ByVal arra As Byte(), FromCopy As Integer, ToCopy As Integer) As Byte()
-        Dim arrb As Byte() = {}
-        Array.Resize(arrb, ToCopy - FromCopy)
-        Array.Copy(arra, FromCopy, arrb, 0, ToCopy - FromCopy)
-        Return arrb
+        Try
+
+            Dim arrb As Byte() = {}
+            Array.Resize(arrb, ToCopy - FromCopy)
+            Array.Copy(arra, FromCopy, arrb, 0, ToCopy - FromCopy)
+            Return arrb
+
+        Catch
+            Return Nothing
+        End Try
     End Function
     Private Function setBCD(ByVal buffer() As Byte, ByVal i As Integer, ByVal j As Integer) As Integer
         dataValue = CopyofRange(buffer, i, (i + j))
@@ -1880,6 +1907,8 @@ Public Class vbWmbus
         Dim value As String = String.Empty
 
         Select Case i
+            Case 0
+                value = ""
             Case DlmsUnit.YEAR
                 value = "a"
             Case DlmsUnit.MONTH
@@ -2090,10 +2119,18 @@ Public Class vbWmbus
                     status = Mid(frame, 25, 2)
 
                     s = SoapHexBinary.Parse(status).Value
-                    If CBool(s(0) And &H20) = True Then     ' Check bit 5 status
-                        aesBlock = Strings.Mid(frame, 31, 256)      ' 1 = Frame compatta
-                    Else
-                        aesBlock = Strings.Mid(frame, 31, 256)      ' 0 = Frame lunga
+                    If frame.Length > 256 And frame.Length <= 512 Then
+                        If CBool(s(0) And &H20) = True Then     ' Check bit 5 status
+                            aesBlock = Strings.Mid(frame, 31, frame.Length).PadRight(512, "0")      ' 1 = Frame compatta
+                        Else
+                            aesBlock = Strings.Mid(frame, 31, frame.Length).PadRight(512, "0")      ' 0 = Frame lunga
+                        End If
+                    ElseIf frame.Length <= 256 Then
+                        If CBool(s(0) And &H20) = True Then     ' Check bit 5 status
+                            aesBlock = Strings.Mid(frame, 31, frame.Length).PadRight(256, "0")      ' 1 = Frame compatta
+                        Else
+                            aesBlock = Strings.Mid(frame, 31, frame.Length).PadRight(256, "0")      ' 0 = Frame lunga
+                        End If
                     End If
 
                 Case "72"
@@ -2109,10 +2146,18 @@ Public Class vbWmbus
                     status = Mid(frame, 41, 2)
 
                     s = SoapHexBinary.Parse(status).Value
-                    If CBool(s(0) And &H20) = True Then     ' Check bit 5 status
-                        aesBlock = Mid(frame, 47, 256)      ' 1 = Frame compatta
-                    Else
-                        aesBlock = Mid(frame, 47, 256)      ' 0 = Frame lunga
+                    If frame.Length > 256 And frame.Length <= 512 Then
+                        If CBool(s(0) And &H20) = True Then     ' Check bit 5 status
+                            aesBlock = Strings.Mid(frame, 47, frame.Length).PadRight(512, "0")      ' 1 = Frame compatta
+                        Else
+                            aesBlock = Strings.Mid(frame, 47, frame.Length).PadRight(512, "0")      ' 0 = Frame lunga
+                        End If
+                    ElseIf frame.Length <= 256 Then
+                        If CBool(s(0) And &H20) = True Then     ' Check bit 5 status
+                            aesBlock = Strings.Mid(frame, 47, frame.Length).PadRight(256, "0")      ' 1 = Frame compatta
+                        Else
+                            aesBlock = Strings.Mid(frame, 47, frame.Length).PadRight(256, "0")      ' 0 = Frame lunga
+                        End If
                     End If
                 Case Else
                     Return ""
@@ -2127,8 +2172,10 @@ Public Class vbWmbus
                     x = x & Hex(result(m)).PadLeft(2, "0").ToLower.ToString
                 Next
 
+
             Catch ex As Exception
                 MsgBox(ex.Message) ' "Errore di decodifica AES!!!"
+                Return ""
             End Try
 
         End If

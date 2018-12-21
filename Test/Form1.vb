@@ -2,6 +2,8 @@
 
 Public Class Form1
 
+    Public add As New vbWmbusNameSpace.vbWmbus
+
 
     Private Sub Button1_Click(sender As Object, e As EventArgs) Handles Button1.Click
 
@@ -16,12 +18,92 @@ Public Class Form1
         'Dim telegramma As String = "A946243490678584000D7A6000900518EDDD8AC94075F0C38E928328A325C0CBC430ACDFC1A23EF51893F46AEE29C17B9C7337818F5EBA36DD2139200D55C53EBCA5E58DD3CC6E7A6A7F37BE5D046769927B4C299AD0669D7DE769F28BBD4C70FA545E0C6BAB9809422B3C8B600E1946D68156AE70E2FD629C21963BA4777EABB32C40E7A3DE58F90BA8C2BDE3CE90D3846BCF439D622634720D993A9DDD3F03FD0C06000002FD0B11220013"'
         'Dim telegramma As String = "A944243486678584000D7A1D00902594AA5ABC80FB05675B4D4C76B6C376BFA3DD67FE8A87BFCB0F763CA4315051B650F355C5AFFEB7673B99DB9021C1EF4DDE5BCA7CEAC04B62538ED38A0FF2E470F245C60BACB7B4F86E813669DE7771245102997AD3B45BB433B11815D0B2365EA61D36638949B21CF4285B9E45FCAF98A1984FCF9611CFB14DEBFC808C8E5435972F4741D1E0B6B2B9A8AF059CAEA04603FD0C06000002FD0B1121000000"
 
-        Dim add As New vbWmbusNameSpace.vbWmbus
-        Dim de = add.MainVBWMBUS("A944243486678584000D7A1D00902594AA5ABC80FB05675B4D4C76B6C376BFA3DD67FE8A87BFCB0F763CA4315051B650F355C5AFFEB7673B99DB9021C1EF4DDE5BCA7CEAC04B62538ED38A0FF2E470F245C60BACB7B4F86E813669DE7771245102997AD3B45BB433B11815D0B2365EA61D36638949B21CF4285B9E45FCAF98A1984FCF9611CFB14DEBFC808C8E5435972F4741D1E0B6B2B9A8AF059CAEA04603FD0C06000002FD0B1121000000")
+        'Dim telegramma As String = "A944243486678584000D7A1D0090252f2f046d1d2d542c04060e0000000413ca01000001fd1700426c0000440600000000c4010600000000c4020600000000c4030600000000c4040600000000c4050600000000c4060600000000c4070600000000c4080600000000c4090600000000c40a0600000000c40b0600000000c40c0600000000c40d0600000000c40e0600000000"
+        Dim telegramma As String = "1A442434810726024412A2CD0D0013B243DB72B5B25CF4D55BC62A"
+        Dim de = add.MainVBWMBUS(telegramma)
 
-        If de IsNot Nothing Then
-            RichTextBox1.Text = de.Item2
+
+        If SerialPort1.IsOpen = False Then
+            SerialPort1.Open()
+            Dim stringaInit = "FF097A00780080710200000000FFFF8000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF003200021400FFFFFFFFFF010004000000FFFFFF01440000000000000000FFFF0C050200FFFFFFFFFF01080000FFFFFFFFFFFFFF0000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFE1"
+            Dim commandInit(125) As Byte
+            Dim indiceArray As Integer = 0
+            While (2 * indiceArray + 1) <= Len(stringaInit)
+
+                commandInit(indiceArray) = CByte(Convert.ToInt32(Microsoft.VisualBasic.Strings.Mid(stringaInit, 2 * indiceArray + 1, 2), 16))
+                indiceArray = indiceArray + 1
+
+            End While
+
+            SerialPort1.Write(commandInit, 0, indiceArray)
+
         End If
 
+
     End Sub
+    Public Sub SerialPort1_DataReceived(ByVal sender As Object, ByVal e As System.IO.Ports.SerialDataReceivedEventArgs) Handles SerialPort1.DataReceived
+
+        Dim buf As Byte() = {}                                          'allocate a buffer
+        Dim dataLock As New Object
+
+
+        Try
+
+
+            While SerialPort1.BytesToRead > 0
+                Array.Resize(buf, buf.Length + 1)
+                buf(buf.Length - 1) = SerialPort1.ReadByte
+                Threading.Thread.Sleep(2)
+            End While
+
+            Threading.Monitor.Enter(dataLock)                                       ' protect the buffer
+
+
+            If Not buf.SequenceEqual({}) Then
+
+                Dim str As String = ""
+                For b = 0 To buf.Length - 1
+                    str = str & Hex(buf(b)).PadLeft(2, "0").ToUpper
+                Next
+
+                If str = "FF89010077" Then
+                    'MsgBox("initialised succesfully")
+                    Exit Sub
+                End If
+
+                Dim lengthByte = buf(0)
+                If buf.Length - 1 <> lengthByte Then
+                    Exit Sub '1 byte ogni tre caratteri del telegramma. Se la lunghezza del telegramma non è multiplo di 3 caratteri, esci
+                End If
+
+                Dim commandByte = buf(1)
+                If commandByte <> 68 Then
+                    Exit Sub                         'se il CField è diverso da 44, il telegramma non ci interessa
+                End If
+
+
+                Dim de = add.MainVBWMBUS(str)
+
+
+                If de IsNot Nothing Then Display(de.Item2)
+
+                Threading.Monitor.Exit(dataLock)                                        ' release buffer protection
+
+            End If
+
+        Catch ex As Exception
+            MsgBox(ex.Message)
+            Threading.Monitor.Exit(dataLock)                                        ' release buffer protection
+            Exit Sub
+        End Try
+
+    End Sub
+    Private Sub Display(ByVal str As String)
+        If Me.InvokeRequired Then
+            Me.Invoke(Sub() Display(str))
+            Return
+        End If
+        RichTextBox1.Text = str
+    End Sub
+
 End Class

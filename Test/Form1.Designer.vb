@@ -22,8 +22,10 @@ Partial Class Form1
     'Non modificarla mediante l'editor del codice.
     <System.Diagnostics.DebuggerStepThrough()> _
     Private Sub InitializeComponent()
+        Me.components = New System.ComponentModel.Container()
         Me.Button1 = New System.Windows.Forms.Button()
         Me.RichTextBox1 = New System.Windows.Forms.RichTextBox()
+        Me.SerialPort1 = New System.IO.Ports.SerialPort(Me.components)
         Me.SuspendLayout()
         '
         'Button1
@@ -43,6 +45,10 @@ Partial Class Form1
         Me.RichTextBox1.TabIndex = 1
         Me.RichTextBox1.Text = ""
         '
+        'SerialPort1
+        '
+        Me.SerialPort1.PortName = "COM3"
+        '
         'Form1
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 13.0!)
@@ -58,4 +64,5 @@ Partial Class Form1
 
     Friend WithEvents Button1 As Windows.Forms.Button
     Friend WithEvents RichTextBox1 As Windows.Forms.RichTextBox
+    Friend WithEvents SerialPort1 As IO.Ports.SerialPort
 End Class
