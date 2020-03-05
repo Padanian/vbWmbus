@@ -14,10 +14,10 @@ Public Class vbWmbus
         General
     End Enum
     Public Enum FunctionField
-        Valore_Istantaneo
-        Valore_Massimo
-        Valore_Minimo
-        Valore_Errore
+        Actual_Value
+        Maximal_Value
+        Minimal_Value
+        Error_Value
     End Enum
     Public Enum TariffDescription
         GENERAL = 0
@@ -380,10 +380,10 @@ Public Class vbWmbus
 
 #End Region
     ''' <summary>
-    ''' Routine per la decodifica del WMBUS
+    ''' Routine for decoding the WMBUS
     ''' </summary>
-    ''' <param name="telegramma">Telegramma da decodificare.</param>
-    ''' <returns>Ritorna una tupla.</returns>
+    ''' <param name="telegramma">Telegram to be decoded. </param>
+    ''' <returns>Return a tuple.</returns>
     ''' <remarks></remarks>
     Public Function MainVBWMBUS(ByVal telegramma As String) As Tuple(Of DecodedDeviceClass, String)
 
@@ -406,19 +406,19 @@ Public Class vbWmbus
         Dim buffer As Byte() = {}
         Dim j As Integer = 0
 
-        'Decodifica Preambolo
+        'Preamble decoding
         For j = 0 To telegramma.Length - 1 Step 2
             Array.Resize(buffer, buffer.Length + 1)
             buffer(j / 2) = Convert.ToInt16(Strings.Mid(telegramma, j + 1, 2), 16)
         Next
         decodePreamble(buffer)
 
-        'ricerca del marker AES (se non trovato = criptato)
+        'search for the AES marker (if not found = encrypted)
         Dim found1 As Boolean = InStr(telegramma.ToUpper, "2F2F")
         Dim frame_type As String = telegramma.Substring(32, 2)
 
 
-        'Decodifica il frame criptato
+        'Decode the encrypted frame
         If Not found1 And manufacturerId = "MAD" Then
             telegramma = DecodeAES(telegramma)
             If telegramma = "" Then Return nothing
@@ -432,16 +432,16 @@ Public Class vbWmbus
         End If
 
 
-        'Se era criptato, ricrea il buffer questa volta decriptato
+        'If it was encrypted, recreate the buffer this time decrypted
         For j = 0 To telegramma.Length - 1 Step 2
             Array.Resize(buffer, buffer.Length + 1)
             buffer(j / 2) = Convert.ToInt16(Strings.Mid(telegramma, j + 1, 2), 16)
         Next
 
-        'Spacchetta tutti i pacchetti impacchettati
+        'Unpack all the packaged packages
         Dim bufferSpacchettato = spacchetta(buffer)
 
-        'Riattribuisci al buffer un pacchetto per volta
+        'Reassign buffer one package at a time
         ReDim buffer(0)
 
         For n = 0 To bufferSpacchettato.Length - 1
@@ -841,7 +841,7 @@ Public Class vbWmbus
                         datafieldLength = 0 'tbd
                 End Select
 
-                'Il puntatore deve saltare tutti i DIFE (solo 2 implementati ad oggi)
+                'The pointer must skip all DIFE (only 2 implemented to date)
                 If payload(j + 1 + 1 * (-existDIFE) + 1 * (-existDIFE2) + 1 * (-existDIFE3) + 1 * (-existDIFE4) + 1 * (-existDIFE5) + 1 * (-existDIFE6) + 1 * (-existDIFE7)) > 127 Then
                     existVIFE = True
                     If payload(j + 2 + 1 * (-existDIFE) + 1 * (-existDIFE2) + 1 * (-existDIFE3) + 1 * (-existDIFE4) + 1 * (-existDIFE5) + 1 * (-existDIFE6) + 1 * (-existDIFE7)) > 127 Then
@@ -865,7 +865,7 @@ Public Class vbWmbus
                 End If
 
                 Dim dataBlock As Byte() = {}
-                Dim lunghezzaDaCopiare = datafieldLength + 2 'che sono i due obbligatori per DIF e per VIF
+                Dim lunghezzaDaCopiare = datafieldLength + 2 'which are the two mandatory for DIF and for VIF
                 If existDIFE Then lunghezzaDaCopiare += 1
                 If existVIFE Then lunghezzaDaCopiare += 1
                 If existDIFE2 Then lunghezzaDaCopiare += 1
@@ -1151,7 +1151,7 @@ Public Class vbWmbus
                     m_description = Description.LAST_CUMULATION_DURATION
                     unit = unitBiggerFor(vif)
                 ElseIf (vif And 124) = 124 Then
-                    ' Trucco per decodificare i telegrammi 01FD17 di Engelmann Maddalena
+                    ' Trick to decode the 01FD17 telegrams of Engelmann Maddalena
                     m_description = Description.ERROR_MASK
                 ElseIf (vif And 124) = 108 Then
                     ' E110 11nn
