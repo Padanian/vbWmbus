@@ -81,6 +81,7 @@
             Case "BEF" : manufDetail = "BEFEGA GmbH, Reichenbacher Str. 22, Schwabach, Germany"
             Case "BEG" : manufDetail = "begcomm Communication AB, Brunnehagen 109, GäteborgSweden"
             Case "BER" : manufDetail = "Bernina Electronic AG"
+            Case "BFW" : manufDetail = "BFW Büro für Wärmemesstechnik OHG, Am Sohlweg 32, D-76297 Stutensee, Germany"
             Case "BHG" : manufDetail = "Brunata A/S, DK-2730 Herlev, Denmark"
             Case "BKB" : manufDetail = "Boendekomfort AB, Box 37, 260 40 Viken, SWEDEN"
             Case "BKT" : manufDetail = "Bekto Precisa, Ibrahima Popovi a bb., Gora de, Bosnia and Herzegovina"
